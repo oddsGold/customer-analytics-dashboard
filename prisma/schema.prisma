@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
+  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+}
+
+model User {
+  id Int @id @default(autoincrement())
+
+  fullName String
+  email    String    @unique
+  password String
+  role     UserRole  @default(USER)
+  verified DateTime?
+
+  provider   String?
+  providerId String?
+
+  verificationCode VerificationCode?
+  reports Report[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Report {
+  id     Int     @id @default(autoincrement())
+  status ReportStatus @default(PENDING)
+
+  user   User? @relation(fields: [userId], references: [id])
+  userId Int
+
+  downloadUrl String?
+
+  items  ReportItem[]
+
+  error  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  completedAt DateTime?
+}
+
+model ReportItem {
+  id Int @id @default(autoincrement())
+
+  report   Report @relation(fields: [reportId], references: [id])
+  reportId Int
+
+  edrpou           String
+  accountName      String?
+  email            String?
+  phone            String?
+  sgCount          Int?
+  licenseStartDate DateTime?
+  partner          String?
+  goldPartner      String?
+
+  createdAt DateTime @default(now())
+}
+
+model VerificationCode {
+  id Int @id @default(autoincrement())
+
+  user   User @relation(fields: [userId], references: [id])
+  userId Int  @unique
+
+  code String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, code])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum ReportStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
