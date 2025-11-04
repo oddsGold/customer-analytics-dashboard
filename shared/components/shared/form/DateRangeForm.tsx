@@ -37,7 +37,7 @@ const FormSchema = z.object({
     dateRange: z.object(
         {
             from: z.date({ required_error: "Дата 'З' є обов'язковою." }),
-            to: z.date().optional(), // 'По' може бути необов'язковим
+            to: z.date().optional(),
         },
         { required_error: "Будь ласка, оберіть діапазон дат." }
     ),
@@ -47,12 +47,9 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export function DateRangeForm() {
-    // Стан для керування Popover (щоб він закривався після вибору)
     const [open, setOpen] = React.useState(false);
     const {status, startReport, successData, error, reset} = useReportStore()
-    console.log(status);
     const [isDownloading, setIsDownloading] = React.useState(false)
-    // 2. Ініціалізуємо react-hook-form
     const form = useForm<FormValues>({
         resolver: zodResolver(FormSchema),
         defaultValues: {
@@ -66,16 +63,13 @@ export function DateRangeForm() {
 
     const setActiveReportId = useReportStore((state) => state.setActiveReportId);
 
-    // 3. Обробник відправки форми
     async function onSubmit(data: FormValues) {
         try {
             const response = await fetch('/api/report/start', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({
-                    // Передаємо дати у стандартному, чистому форматі ISO (yyyy-MM-dd)
                     from: format(data.dateRange.from, "yyyy-MM-dd"),
-                    // Якщо 'to' не обрано, передаємо null
                     to: data.dateRange.to ? format(data.dateRange.to, "yyyy-MM-dd") : null,
                     modules: data.modules,
                 })
@@ -87,19 +81,15 @@ export function DateRangeForm() {
                 throw new Error(result.error || 'Невідома помилка сервера');
             }
 
-            // Успіх!
-            toast.success(`Звіт (ID: ${result.reportId}) почав генеруватися.`);
+            toast.success(`Звіт почав генеруватися.`);
 
             setActiveReportId(result.reportId);
 
-            // TODO: Тут ви можете запустити логіку WebSocket
-            // (наприклад: subscribeToReport(result.reportId);)
             startReport(result.reportId);
-            // Скидаємо форму (опціонально)
+
             form.reset();
 
         } catch (error: any) {
-            console.error("Помилка запуску звіту:", error);
             toast.error(error.message || 'Не вдалося запустити звіт.');
         }
     }
@@ -133,19 +123,16 @@ export function DateRangeForm() {
                 // 3. Створюємо тимчасовий, безпечний URL для цього Blob
                 const blobUrl = window.URL.createObjectURL(fileBlob);
 
-                // 4. Створюємо невидиме посилання
                 const link = document.createElement('a');
                 link.href = blobUrl;
                 const filename = successData.downloadUrl.split('/').pop() || 'report.csv';
                 link.setAttribute('download', filename);
                 document.body.appendChild(link);
 
-                // 5. Імітуємо клік (це 100% безпечно для Blob URL)
                 link.click();
 
-                // 6. Прибираємо сміття
                 document.body.removeChild(link);
-                window.URL.revokeObjectURL(blobUrl); // Очищуємо пам'ять
+                window.URL.revokeObjectURL(blobUrl);
 
                 // 7. Тільки ТЕПЕР скидаємо стан
                 reset();
@@ -298,10 +285,7 @@ export function DateRangeForm() {
                 )}
 
                 {status === 'success' && successData?.downloadUrl && (
-                    // ✅ 2. ДОДАНО 'relative' для позиціонування 'X'
                     <div className="relative mt-4 p-4 pr-10 border rounded-md bg-green-100 border-green-300 text-green-900">
-
-                        {/* ✅ 3. ДОДАНО КНОПКУ 'X' */}
                         <Button
                             type="button"
                             variant="ghost"
