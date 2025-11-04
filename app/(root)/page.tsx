@@ -34,7 +34,7 @@ export default async function Home() {
                     </Suspense>
 
                     <ReportStatusListener userId={user.id} />
-                    <ReportStatusModal />
+                    {/*<ReportStatusModal />*/}
 
                     <Container className="mt-10">
                         <Title text="Звіти по клієнтах" size="lg" className="font-extrabold"/>

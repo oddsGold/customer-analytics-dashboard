@@ -1,28 +1,13 @@
 "use client"
 
 import { useReportStore } from '@/shared/store';
-import {Loader} from "lucide-react";
 import {Button} from "@/shared/components/ui";
-// Ваша кнопка
 
 export function ReportStatusModal() {
     // Читаємо повний стан зі стору
     const { status, successData, error, reset } = useReportStore();
 
-    // // 1. Стан завантаження
-    // if (status === 'pending') {
-    //     return (
-    //         <div className="modal-overlay">
-    //             <div className="modal-content">
-    //                 <Loader />
-    //                 <h3>Звіт генерується...</h3>
-    //                 <p>Це може зайняти до хвилини. Будь ласка, зачекайте.</p>
-    //             </div>
-    //         </div>
-    //     );
-    // }
-
-    // 2. Стан помилки
+    // Стан помилки
     if (status === 'error') {
         return (
             <div className="modal-overlay">
@@ -40,15 +25,15 @@ export function ReportStatusModal() {
         );
     }
 
-    // 3. Стан успіху
-    if (status === 'success') {
+    // Стан успіху
+    if (status === 'success' && successData?.downloadUrl) {
         // Припустимо, воркер повернув об'єкт { downloadUrl: '...' }
         // const downloadUrl = successData?.downloadUrl;
 
         // Або якщо він повернув масив (як у вашому прикладі),
         // ми можемо згенерувати посилання на JSON
-        const dataStr = JSON.stringify(successData);
-        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        // const dataStr = successData.downloadUrl;
+        // const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
 
         return (
             <div className="modal-overlay">
@@ -58,14 +43,13 @@ export function ReportStatusModal() {
 
                     {/* Кнопка "Завантажити" */}
                     <a
-                        href={dataUri}
-                        download="report.json" // Ім'я файлу
+                        href={successData.downloadUrl}
+                        download // Ім'я файлу
                         className="button button-success" // Стилізуйте як кнопку
                     >
                         Завантажити звіт (JSON)
                     </a>
 
-                    {/* Кнопка "Закрити", яка скидає стан */}
                     <Button onClick={reset} variant="secondary">
                         Закрити
                     </Button>

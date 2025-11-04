@@ -1,9 +1,7 @@
-// ✅ Тепер все на 'import'
 import { Worker } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
-// ✅ Переконайтесь, що цей файл теж переписаний на .ts
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
-import { env } from './shared/lib/env'; // ✅ Імпортуємо ваш хелпер (має бути .ts)
+import { env } from './shared/lib/env';
 
 const prisma = new PrismaClient();
 
@@ -15,6 +13,8 @@ const REDIS_CONNECTION = {
 const SOCKET_HOST = env('SOCKET_HOST', '127.0.0.1');
 const SOCKET_PORT = parseInt(env('SOCKET_PORT', '3001'), 10);
 const SOCKET_SERVER_URL = `http://${SOCKET_HOST}:${SOCKET_PORT}`;
+
+const SITE_URL = env('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -46,7 +46,7 @@ const worker = new Worker('report-generation', async (job) => {
         const results = [
             { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
             { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія'", email: "contact@mriya.com", phone: "+380679876543", sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" }
+            { edrpou: "11223344", accountName: "ПАТ 'Мрія'", email: "contact@mriya.com", sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" }
         ];
 
         let count = 0;
@@ -59,10 +59,10 @@ const worker = new Worker('report-generation', async (job) => {
             });
             count++;
         }
-        console.log(`[JOB DATA] Всі ${count} рядків успішно вставлено для ${reportId}.`);
 
+        await delay(10000);
 
-        const downloadUrl = await generateReportCsv(prisma, reportId);
+        const downloadUrl = await generateReportCsv(prisma, reportId, SITE_URL);
 
         if (!downloadUrl) {
             console.warn(`[JOB CSV] generateReportCsv повернула null. CSV не створено.`);

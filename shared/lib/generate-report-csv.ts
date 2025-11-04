@@ -31,14 +31,15 @@ interface CsvRecord {
  * Генерує CSV файл зі звітними даними та зберігає його у /public/reports
  * @param {PrismaClient} prisma - Екземпляр PrismaClient
  * @param {number} reportId - ID звіту для обробки
+ * @param {string} siteUrl - Повний URL сайту (напр. http://localhost:3000)
  * @returns {Promise<string | null>} - Публічний URL для завантаження файлу, або null
  */
 export async function generateReportCsv(
     prisma: PrismaClient,
-    reportId: number
+    reportId: number,
+    siteUrl: string
 ): Promise<string | null> {
 
-    console.log(reportId)
     try {
         // 1. Отримуємо всі ReportItem для цього звіту
         const items: ReportItemData[] = await prisma.reportItem.findMany({
@@ -68,7 +69,8 @@ export async function generateReportCsv(
         const filePath = path.join(reportsDir, filename);
 
         // 3. Визначаємо публічний URL (який побачить клієнт)
-        const publicUrl = `/reports/${filename}`;
+        const relativeUrl = `/reports/${filename}`;
+        const publicUrl = `${siteUrl}${relativeUrl}`;
 
         // 4. Налаштовуємо заголовки CSV
         const csvWriter = createObjectCsvWriter({

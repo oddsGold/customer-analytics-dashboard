@@ -48,7 +48,7 @@ export const useReportStore = create<ReportState>()(
 
             // Викликається кнопкою "Закрити" на модалці успіху/помилки
             reset: () => set({
-                status: 'idle',          // <== Сховати модалку
+                status: 'idle',
                 activeReportId: null,
                 successData: null,
                 error: null,
