@@ -20,4 +20,8 @@ export { ErrorText } from './error-text';
 export { ClearButton } from './clear-button';
 export { ProfileForm } from './profile-form';
 export { InfoBlock } from './info-block';
+export { FormActions } from './FormActions';
+export { FormDateRangePicker } from './FormDateRangePicker';
+export { FormModuleCheckboxes } from './FormModuleCheckboxes';
+export { FormResult } from './FormResult';
 export * from './modals';

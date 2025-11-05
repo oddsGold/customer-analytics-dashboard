@@ -60,7 +60,7 @@ export const Header: React.FC<Props> = ({ hasSearch = true, hasCart = true, clas
                             disabled={loading}
                             onClick={onClickSignOut}
                             variant="outline"
-                            className="text-base"
+                            className="text-base disabled:bg-secondary rounded-[5px]"
                         >
                             {loading ? (
                                 <>

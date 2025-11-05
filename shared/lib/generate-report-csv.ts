@@ -1,9 +1,8 @@
 import { createObjectCsvWriter } from 'csv-writer';
 import path from 'path';
-import { promises as fs } from 'fs'; // Використовуємо асинхронні версії fs
-import { PrismaClient } from '@prisma/client'; // Імпортуємо тип
+import { promises as fs } from 'fs';
+import { PrismaClient } from '@prisma/client';
 
-// Інтерфейс для даних, які ми отримуємо з Prisma
 interface ReportItemData {
     edrpou: string;
     accountName: string | null;
@@ -15,25 +14,17 @@ interface ReportItemData {
     goldPartner: string | null;
 }
 
-// Інтерфейс для запису в CSV (дати стають рядками)
 interface CsvRecord {
     edrpou: string;
     accountName: string | null;
     email: string | null;
     phone: string | null;
     sgCount: number | null;
-    licenseStartDate: string; // Дати будуть перетворені на рядки
+    licenseStartDate: string;
     partner: string | null;
     goldPartner: string | null;
 }
 
-/**
- * Генерує CSV файл зі звітними даними та зберігає його у /public/reports
- * @param {PrismaClient} prisma - Екземпляр PrismaClient
- * @param {number} reportId - ID звіту для обробки
- * @param {string} siteUrl - Повний URL сайту (напр. http://localhost:3000)
- * @returns {Promise<string | null>} - Публічний URL для завантаження файлу, або null
- */
 export async function generateReportCsv(
     prisma: PrismaClient,
     reportId: number,
@@ -104,7 +95,7 @@ export async function generateReportCsv(
         // 7. Повертаємо публічний лінк
         return publicUrl;
 
-    } catch (error: unknown) { // Типізуємо 'error' як 'unknown'
+    } catch (error: unknown) {
         let errorMessage = `CSV Generation Failed for report ${reportId}`;
         if (error instanceof Error) {
             errorMessage += `: ${error.message}`;

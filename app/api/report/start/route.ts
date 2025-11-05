@@ -27,24 +27,23 @@ export async function POST(req: Request) {
 
         // --- 2. Валідація (перевіряємо, чи 'from' існує) ---
         if (!from) {
-            return NextResponse.json({ error: 'Дата "З" (from) є обов\'язковою' }, { status: 400 });
+            return NextResponse.json({ error: 'Дата "З" є обов\'язковою' }, { status: 400 });
         }
 
 
         // 2. Створюємо РЕАЛЬНИЙ запис у вашій базі даних
         const report = await prisma.report.create({
             data: {
-                status: 'PENDING', // Встановлюємо початковий статус
-                userId: userId      // Прив'язуємо до користувача
-                // 'completedAt' та 'error' залишаються null
+                status: 'PENDING',
+                userId: userId
             }
         });
 
         // 3. Додаємо завдання в чергу з даними, потрібними для роботи
         const job = await reportQueue.add('generate-EDRPOU-report', {
-            reportId: report.id, // <-- Тепер це реальний ID з БД (напр. 1, 2, 3)
+            reportId: report.id,
             userId: userId,
-            dateFrom: from, // <-- Передаємо дату воркеру
+            dateFrom: from,
             dateTo: to
             // ...інші параметри, які може треба передати воркеру
         });
@@ -53,7 +52,7 @@ export async function POST(req: Request) {
         return NextResponse.json({
             message: "Звіт почав генеруватися.",
             reportId: report.id
-        }, { status: 202 }); // "Accepted"
+        }, { status: 202 });
 
     } catch (error) {
         console.error("Помилка при додаванні завдання в чергу:", error);

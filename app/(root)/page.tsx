@@ -3,7 +3,7 @@ import React, {Suspense} from "react";
 import {LoginForm} from "@/shared/components/shared/modals/auth-modal/forms/login-form";
 import {getUserSession} from "@/shared/lib/get-user-session";
 import { prisma } from '@/prisma/prisma-client';
-import {DateRangeForm} from "@/shared/components/shared/form/DateRangeForm";
+import {CustomerReportForm} from "@/shared/components/shared/form/CustomerReportForm";
 import {ReportStatusListener} from "@/shared/components/shared/ReportStatusListener";
 import {ReportStatusModal} from "@/shared/components/shared/ReportStatusModal";
 
@@ -44,8 +44,8 @@ export default async function Home() {
                     <Container className="mt-10 pb-14">
                         <div className="flex gap-[80px]">
                             <div className="flex-1">
-                                <div className="flex flex-col gap-16">
-                                    <DateRangeForm />
+                                <div className="flex flex-col gap-4">
+                                    <CustomerReportForm />
                                 </div>
                             </div>
                         </div>
