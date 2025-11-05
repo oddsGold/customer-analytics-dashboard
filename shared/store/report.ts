@@ -1,14 +1,15 @@
 import { create } from 'zustand'
 import { persist, createJSONStorage } from 'zustand/middleware'
+import {ReportSuccessData} from "@/shared/constants";
 
 export interface ReportState {
     status: 'idle' | 'pending' | 'success' | 'error';
     activeReportId: number | null;
-    successData: any | null; // Тут будуть дані для завантаження
+    successData: ReportSuccessData | null;
     error: string | null;
 
     startReport: (reportId: number) => void;
-    setSuccess: (data: any) => void;
+    setSuccess: (data: ReportSuccessData) => void;
     setError: (error: string) => void;
     setActiveReportId: (id: number | null) => void;
     reset: () => void;

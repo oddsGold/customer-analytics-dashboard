@@ -2,15 +2,34 @@ import { Queue } from 'bullmq';
 import { NextResponse } from 'next/server';
 import {getUserSession} from "@/shared/lib/get-user-session";
 import {prisma} from "@/prisma/prisma-client";
+import {env} from "@/shared/lib/env";
 
 
-// 1. Підключаємось до черги (вона живе у Redis)
+const REDIS_CONNECTION = {
+    host: env('REDIS_HOST', '127.0.0.1'),
+    port: parseInt(env('REDIS_PORT', '6379'), 10)
+};
+
+// Створюємо чергу (Queue) З НАЛАШТУВАННЯМИ "RETRIES"
 const reportQueue = new Queue('report-generation', {
-    connection: {
-        host: process.env.REDIS_HOST || '127.0.0.1',
-        port: parseInt(process.env.REDIS_PORT || '6379', 10)
+    connection: REDIS_CONNECTION,
+
+    defaultJobOptions: {
+        attempts: 3,
+        backoff: {
+            type: 'exponential',
+            delay: 10000,
+        },
+        removeOnComplete: true,
+        removeOnFail: false,
     }
 });
+
+interface RequestBody {
+    from: string;
+    to: string | null;
+    modules?: string[];
+}
 
 export async function POST(req: Request) {
     try {
@@ -22,16 +41,13 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        // Ми очікуємо, що з фронтенду прийде { from: "yyyy-MM-dd", to: "yyyy-MM-dd" | null }
-        const { from, to } = body as { from: string, to: string | null };
+        const { from, to, modules } = body as RequestBody;
 
-        // --- 2. Валідація (перевіряємо, чи 'from' існує) ---
         if (!from) {
             return NextResponse.json({ error: 'Дата "З" є обов\'язковою' }, { status: 400 });
         }
 
 
-        // 2. Створюємо РЕАЛЬНИЙ запис у вашій базі даних
         const report = await prisma.report.create({
             data: {
                 status: 'PENDING',
@@ -39,16 +55,14 @@ export async function POST(req: Request) {
             }
         });
 
-        // 3. Додаємо завдання в чергу з даними, потрібними для роботи
         const job = await reportQueue.add('generate-EDRPOU-report', {
             reportId: report.id,
             userId: userId,
             dateFrom: from,
-            dateTo: to
-            // ...інші параметри, які може треба передати воркеру
+            dateTo: to,
+            modules: modules
         });
 
-        // 4. МИТТЄВО віддаємо відповідь користувачу
         return NextResponse.json({
             message: "Звіт почав генеруватися.",
             reportId: report.id

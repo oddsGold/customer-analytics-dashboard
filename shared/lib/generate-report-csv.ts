@@ -32,7 +32,6 @@ export async function generateReportCsv(
 ): Promise<string | null> {
 
     try {
-        // 1. Отримуємо всі ReportItem для цього звіту
         const items: ReportItemData[] = await prisma.reportItem.findMany({
             where: { reportId: reportId },
             select: {
@@ -52,18 +51,17 @@ export async function generateReportCsv(
             return null;
         }
 
-        // 2. Визначаємо шлях та назву файлу
         const reportsDir = path.resolve(process.cwd(), 'public', 'reports');
         await fs.mkdir(reportsDir, { recursive: true });
 
         const filename = `report-${reportId}-${Date.now()}.csv`;
         const filePath = path.join(reportsDir, filename);
 
-        // 3. Визначаємо публічний URL (який побачить клієнт)
         const relativeUrl = `/reports/${filename}`;
         const publicUrl = `${siteUrl}${relativeUrl}`;
 
-        // 4. Налаштовуємо заголовки CSV
+        await fs.writeFile(filePath, '\ufeff');
+
         const csvWriter = createObjectCsvWriter({
             path: filePath,
             header: [
@@ -75,24 +73,26 @@ export async function generateReportCsv(
                 { id: 'licenseStartDate', title: 'License Start Date' },
                 { id: 'partner', title: 'Partner' },
                 { id: 'goldPartner', title: 'Gold Partner' }
-            ]
+            ],
+
+            encoding: 'utf8',
+            fieldDelimiter: ';',
+            append: true
         });
 
-        // 5. Форматуємо дати (csv-writer очікує рядки)
         const records: CsvRecord[] = items.map((item) => ({
             ...item,
+            phone: item.phone ? `="${item.phone}"` : '',
             // Перетворюємо дату в читанний формат, або залишаємо порожнім
             licenseStartDate: item.licenseStartDate
                 ? item.licenseStartDate.toISOString().split('T')[0]
                 : ''
         }));
 
-        // 6. Записуємо дані у файл
         await csvWriter.writeRecords(records);
 
         console.log(`[CSV] Файл успішно створено: ${filePath}`);
 
-        // 7. Повертаємо публічний лінк
         return publicUrl;
 
     } catch (error: unknown) {

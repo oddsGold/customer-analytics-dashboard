@@ -5,7 +5,6 @@ import React, {useState} from 'react';
 import { Container } from './container';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CartButton } from './cart-button';
 import { useSearchParams } from 'next/navigation';
 import {Button} from "@/shared/components/ui";
 import {ProfileButton} from "@/shared/components/shared/profile-button";

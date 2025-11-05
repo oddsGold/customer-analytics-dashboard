@@ -2,6 +2,8 @@ import { Worker } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
 import { env } from './shared/lib/env';
+import {ClientDetail, ReportJobData} from "@/shared/constants";
+import {ExternalAPI} from "@/shared/services/external-api-service";
 
 const prisma = new PrismaClient();
 
@@ -18,16 +20,12 @@ const SITE_URL = env('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-interface ReportJobData {
-    reportId: number;
-    userId: number;
-}
+
 
 const worker = new Worker('report-generation', async (job) => {
-    const { reportId, userId } = job.data as ReportJobData;
+    const { reportId, userId, dateFrom, dateTo, modules } = job.data as ReportJobData;
 
     if (!reportId || !userId) {
-        console.error(`☠️ [JOB FAILED] Завдання ${job.id} не має 'reportId' або 'userId'. Дані:`, job.data);
         throw new Error("Missing reportId or userId in job data");
     }
 
@@ -37,31 +35,59 @@ const worker = new Worker('report-generation', async (job) => {
             data: { status: 'PROCESSING' }
         });
 
-        // тестові дані, тут буде логіка
-        const results = [
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія'", email: "contact@mriya.com", sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" }
-        ];
+        await prisma.reportItem.deleteMany({
+            where: {
+                reportId: reportId
+            }
+        });
+
+        const paramsForApi1 = { dateFrom, dateTo, modules };
+        const edrpouList = await ExternalAPI.getEdrpouList(paramsForApi1);
+
+        let results: ClientDetail[] = [];
+        if (edrpouList.length > 0) {
+            results = await ExternalAPI.getClientDetails(edrpouList);
+        } else {
+            console.log(`[JOB DATA] API 1 не повернуло EDRPOU. Звіт буде порожнім.`);
+        }
 
         let count = 0;
         for (const item of results) {
             await prisma.reportItem.create({
                 data: {
                     ...item,
+                    // Переконуємось, що дата є об'єктом Date, якщо вона прийшла як рядок
+                    licenseStartDate: item.licenseStartDate ? new Date(item.licenseStartDate) : null,
                     reportId: reportId
                 }
             });
             count++;
         }
 
+        // тестові дані, тут буде логіка
+        // const results = [
+        //     { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
+        //     { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
+        //     { edrpou: "11223344", accountName: "ПАТ 'Мрія'", email: "contact@mriya.com", sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" }
+        // ];
+
+        // let count = 0;
+        // for (const item of results) {
+        //     await prisma.reportItem.create({
+        //         data: {
+        //             ...item,
+        //             reportId: reportId
+        //         }
+        //     });
+        //     count++;
+        // }
+
         await delay(10000);
 
         const downloadUrl = await generateReportCsv(prisma, reportId, SITE_URL);
 
         if (!downloadUrl) {
-            console.warn(`[JOB CSV] generateReportCsv повернула null. CSV не створено.`);
-            // (тут варто кинути помилку, якщо CSV є обов'язковим)
+            throw new Error(`CSV не створено, generateReportCsv повернула null для звіту ${reportId}.`);
         }
 
         await prisma.report.update({
@@ -82,6 +108,12 @@ const worker = new Worker('report-generation', async (job) => {
                 reportId: reportId,
                 data: { downloadUrl: downloadUrl }
             })
+        });
+
+        const deleteResult = await prisma.reportItem.deleteMany({
+            where: {
+                reportId: reportId
+            }
         });
 
     } catch (error) {

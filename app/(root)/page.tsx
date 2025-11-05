@@ -5,7 +5,6 @@ import {getUserSession} from "@/shared/lib/get-user-session";
 import { prisma } from '@/prisma/prisma-client';
 import {CustomerReportForm} from "@/shared/components/shared/form/CustomerReportForm";
 import {ReportStatusListener} from "@/shared/components/shared/ReportStatusListener";
-import {ReportStatusModal} from "@/shared/components/shared/ReportStatusModal";
 
 
 export default async function Home() {
@@ -34,7 +33,6 @@ export default async function Home() {
                     </Suspense>
 
                     <ReportStatusListener userId={user.id} />
-                    {/*<ReportStatusModal />*/}
 
                     <Container className="mt-10">
                         <Title text="Звіти по клієнтах" size="lg" className="font-extrabold"/>

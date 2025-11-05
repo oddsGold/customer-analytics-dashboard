@@ -27,56 +27,46 @@ export function FormModuleCheckboxes({ control }: { control: Control<any> }) {
         <FormField
             control={control}
             name="modules"
-            render={() => (
+            render={({ field }) => (
                 <FormItem>
                     <div className="mt-6">
                         <FormLabel className="text-base">Перелік модулів</FormLabel>
                     </div>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                        {modules.map((module) => (
-                            <FormField
-                                key={module.id}
-                                control={control}
-                                name="modules"
-                                render={({ field }) => {
-                                    const currentValue: string[] = field.value || [];
-                                    const isChecked = currentValue.includes(module.id);
 
-                                    const handleCheckedChange = (checkedState: boolean | 'indeterminate') => {
-                                        const isNowChecked = !!checkedState;
-                                        return isNowChecked
-                                            ? field.onChange([...currentValue, module.id])
-                                            : field.onChange(
-                                                currentValue.filter(
-                                                    (value) => value !== module.id
-                                                )
-                                            );
-                                    };
+                        {modules.map((module) => {
+                            const currentValue: string[] = field.value || [];
+                            const isChecked = currentValue.includes(module.id);
 
-                                    return (
-                                        <FormItem
-                                            key={module.id}
-                                            className="flex flex-row items-center space-x-3 space-y-0 rounded-[5px] cursor-pointer border border-primary p-3 bg-white/50 shadow-sm hover:bg-secondary"
-                                            onClick={() => handleCheckedChange(!isChecked)}
-                                        >
-                                            <FormControl>
-                                                <Checkbox
-                                                    checked={isChecked}
-                                                    onCheckedChange={handleCheckedChange}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            </FormControl>
-                                            <FormLabel
-                                                className="font-normal text-sm cursor-pointer"
-                                                onClick={(e) => e.stopPropagation()}
-                                            >
-                                                {module.label}
-                                            </FormLabel>
-                                        </FormItem>
+                            const handleCheckedChange = (checkedState: boolean | 'indeterminate') => {
+                                const isNowChecked = !!checkedState;
+                                return isNowChecked
+                                    ? field.onChange([...currentValue, module.id])
+                                    : field.onChange(
+                                        currentValue.filter(
+                                            (value) => value !== module.id
+                                        )
                                     );
-                                }}
-                            />
-                        ))}
+                            };
+
+                            return (
+                                <FormItem key={module.id} className="space-y-0">
+                                    <FormLabel
+                                        className="flex flex-row items-center space-x-3 rounded-[5px] cursor-pointer border border-primary p-3 bg-white/50 shadow-sm hover:bg-secondary"
+                                    >
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={isChecked}
+                                                onCheckedChange={handleCheckedChange}
+                                            />
+                                        </FormControl>
+                                        <span className="font-normal text-sm cursor-pointer">
+                                            {module.label}
+                                        </span>
+                                    </FormLabel>
+                                </FormItem>
+                            );
+                        })}
                     </div>
                     <FormMessage />
                 </FormItem>
@@ -84,3 +74,4 @@ export function FormModuleCheckboxes({ control }: { control: Control<any> }) {
         />
     );
 }
+

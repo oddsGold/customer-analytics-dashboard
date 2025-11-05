@@ -9,6 +9,8 @@ import toast from "react-hot-toast"
 import { Form } from "@/shared/components/ui";
 import { useReportStore } from "@/shared/store";
 import {FormActions, FormDateRangePicker, FormModuleCheckboxes, FormResult} from "@/shared/components/shared";
+import {API} from "@/shared/services/api-client";
+import {ReportStartResponse} from "@/shared/constants";
 
 
 const FormSchema = z.object({
@@ -40,24 +42,15 @@ export function CustomerReportForm() {
 
     async function onSubmit(data: FormValues) {
         try {
-            const response = await fetch('/api/report/start', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    from: format(data.dateRange.from, "yyyy-MM-dd"),
-                    to: data.dateRange.to ? format(data.dateRange.to, "yyyy-MM-dd") : null,
-                    modules: data.modules,
-                })
-            });
+            const params = {
+                from: format(data.dateRange.from, "yyyy-MM-dd"),
+                to: data.dateRange.to ? format(data.dateRange.to, "yyyy-MM-dd") : null,
+                modules: data.modules,
+            };
+            const response: ReportStartResponse = await API.clients.startReport(params);
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Невідома помилка сервера');
-            }
-
-            toast.success(`Звіт почав генеруватися.`);
-            startReport(result.reportId);
+            toast.success(response.message || `Звіт почав генеруватися.`);
+            startReport(response.reportId);
             form.reset();
 
         } catch (error: any) {
