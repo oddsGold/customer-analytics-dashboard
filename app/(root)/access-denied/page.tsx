@@ -5,7 +5,7 @@ export default function UnauthorizedPage() {
         <div className="flex flex-col items-center justify-center mt-40">
             <InfoBlock
                 title="Access denied"
-                text="Цю сторінку можуть переглядати лише авторизовані користувачі."
+                text="Перегляд цієї сторінки обмежено. (Потрібні права доступу)"
                 imageUrl="/assets/images/lock.png"
             />
         </div>

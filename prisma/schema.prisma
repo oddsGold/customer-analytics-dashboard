@@ -23,6 +23,9 @@ model User {
   verificationCode VerificationCode?
   reports Report[]
 
+  createdCategories Category[] @relation("CreatedCategories")
+  createdModules    Module[]   @relation("CreatedModules")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -62,6 +65,37 @@ model ReportItem {
   goldPartner      String?
 
   createdAt DateTime @default(now())
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  author   User @relation("CreatedCategories", fields: [authorId], references: [id])
+  authorId Int
+
+  modules Module[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Module {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  moduleId Int  @unique
+
+  author   User @relation("CreatedModules", fields: [authorId], references: [id])
+  authorId Int
+
+  category   Category @relation(fields: [categoryId], references: [id])
+  categoryId Int
+
+  isPublished Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationCode {

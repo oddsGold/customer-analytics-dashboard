@@ -10,6 +10,7 @@ import {Button} from "@/shared/components/ui";
 import {ProfileButton} from "@/shared/components/shared/profile-button";
 import {useSession, signOut} from "next-auth/react";
 import { Loader2 } from 'lucide-react';
+import {SettingsButton} from "@/shared/components/shared/settings-button";
 
 interface Props {
     hasSearch?: boolean;
@@ -53,6 +54,8 @@ export const Header: React.FC<Props> = ({ hasSearch = true, hasCart = true, clas
                 <div className="flex items-center gap-3">
 
                     <ProfileButton />
+
+                    <SettingsButton />
 
                     {session && (
                         <Button

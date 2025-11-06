@@ -3,7 +3,7 @@ import React, {Suspense} from "react";
 import {LoginForm} from "@/shared/components/shared/modals/auth-modal/forms/login-form";
 import {getUserSession} from "@/shared/lib/get-user-session";
 import { prisma } from '@/prisma/prisma-client';
-import {CustomerReportForm} from "@/shared/components/shared/form/CustomerReportForm";
+import {CustomerReportForm} from "@/shared/components/shared/form/customer-report-form";
 import {ReportStatusListener} from "@/shared/components/shared/ReportStatusListener";
 
 
