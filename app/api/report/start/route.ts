@@ -10,12 +10,11 @@ const REDIS_CONNECTION = {
     port: parseInt(env('REDIS_PORT', '6379'), 10)
 };
 
-// Створюємо чергу (Queue) З НАЛАШТУВАННЯМИ "RETRIES"
 const reportQueue = new Queue('report-generation', {
     connection: REDIS_CONNECTION,
 
     defaultJobOptions: {
-        attempts: 3,
+        attempts: parseInt(env('BULLMQ_JOB_ATTEMPTS', '3'), 10) || 3,
         backoff: {
             type: 'exponential',
             delay: 10000,

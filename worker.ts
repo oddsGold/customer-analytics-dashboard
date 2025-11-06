@@ -1,4 +1,4 @@
-import { Worker } from 'bullmq';
+import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
 import { env } from './shared/lib/env';
@@ -11,15 +11,29 @@ const REDIS_CONNECTION = {
     host: env('REDIS_HOST', '127.0.0.1'),
     port: parseInt(env('REDIS_PORT', '6379'), 10)
 };
-
 const SOCKET_HOST = env('SOCKET_HOST', 'http://127.0.0.1');
 const SOCKET_PORT = parseInt(env('SOCKET_PORT', '3001'), 10);
 const SOCKET_SERVER_URL = `${SOCKET_HOST}:${SOCKET_PORT}`;
-
 const SITE_URL = env('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+async function sendProgress(reportId: number, userId: number, progress: number) {
+    const finalProgress = Math.min(Math.max(progress, 0), 100);
+
+    try {
+        await fetch(`${SOCKET_SERVER_URL}/job-progress`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                userId: userId,
+                reportId: reportId,
+                progress: finalProgress
+            })
+        });
+    } catch (err: any) {
+        console.error(`[Socket Progress Error] Не вдалося відправити прогрес для ${reportId}: ${err.message}`);
+    }
+}
 
 
 const worker = new Worker('report-generation', async (job) => {
@@ -34,60 +48,59 @@ const worker = new Worker('report-generation', async (job) => {
             where: { id: reportId },
             data: { status: 'PROCESSING' }
         });
+        await sendProgress(reportId, userId, 5);
 
         await prisma.reportItem.deleteMany({
             where: {
                 reportId: reportId
             }
         });
+        await sendProgress(reportId, userId, 10);
 
         const paramsForApi1 = { dateFrom, dateTo, modules };
         const edrpouList = await ExternalAPI.getEdrpouList(paramsForApi1);
 
-        let results: ClientDetail[] = [];
-        if (edrpouList.length > 0) {
-            results = await ExternalAPI.getClientDetails(edrpouList);
-        } else {
-            console.log(`[JOB DATA] API 1 не повернуло EDRPOU. Звіт буде порожнім.`);
+        if (edrpouList.length === 0) {
+            throw new Error("Не знайдено жодного клієнта за вказаними критеріями.");
         }
+
+        await sendProgress(reportId, userId, 15);
 
         let count = 0;
-        for (const item of results) {
-            await prisma.reportItem.create({
-                data: {
-                    ...item,
-                    // Переконуємось, що дата є об'єктом Date, якщо вона прийшла як рядок
-                    licenseStartDate: item.licenseStartDate ? new Date(item.licenseStartDate) : null,
-                    reportId: reportId
+        const totalItems = edrpouList.length;
+        const progressStart = 15;
+        const progressRange = 75;
+
+        if (totalItems > 0) {
+            for (let index = 0; index < totalItems; index++) {
+                const edrpou = edrpouList[index];
+
+                const item: ClientDetail | null = await ExternalAPI.getClientDetail(edrpou);
+
+                if (item) {
+                    await prisma.reportItem.create({
+                        data: {
+                            ...item,
+                            licenseStartDate: item.licenseStartDate ? new Date(item.licenseStartDate) : null,
+                            reportId: reportId
+                        }
+                    });
+                    count++;
+                } else {
+                    console.log(`[JOB DATA] Пропущено EDRPOU ${edrpou} (немає даних).`);
                 }
-            });
-            count++;
+
+                const progress = progressStart + Math.round(((index + 1) / totalItems) * progressRange);
+
+                await sendProgress(reportId, userId, progress);
+            }
         }
 
-        // тестові дані, тут буде логіка
-        // const results = [
-        //     { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-        //     { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-        //     { edrpou: "11223344", accountName: "ПАТ 'Мрія'", email: "contact@mriya.com", sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" }
-        // ];
-
-        // let count = 0;
-        // for (const item of results) {
-        //     await prisma.reportItem.create({
-        //         data: {
-        //             ...item,
-        //             reportId: reportId
-        //         }
-        //     });
-        //     count++;
-        // }
-
-        await delay(10000);
-
         const downloadUrl = await generateReportCsv(prisma, reportId, SITE_URL);
+        await sendProgress(reportId, userId, 95);
 
-        if (!downloadUrl) {
-            throw new Error(`CSV не створено, generateReportCsv повернула null для звіту ${reportId}.`);
+        if (!downloadUrl && count > 0) {
+            throw new Error(`CSV не створено, generateReportCsv повернула null (але дані були). Звіт ${reportId}.`);
         }
 
         await prisma.report.update({
@@ -98,7 +111,6 @@ const worker = new Worker('report-generation', async (job) => {
                 downloadUrl: downloadUrl
             }
         });
-
 
         await fetch(`${SOCKET_SERVER_URL}/job-complete`, {
             method: 'POST',
@@ -119,6 +131,25 @@ const worker = new Worker('report-generation', async (job) => {
     } catch (error) {
         const err = error as Error;
 
+        throw err;
+    }
+}, { connection: REDIS_CONNECTION });
+
+worker.on('failed', async (job: Job | undefined, err: Error) => {
+    if (!job) {
+        console.error(`Помилка в завданні (job is undefined): ${err.message}`);
+        return;
+    }
+
+    const { reportId, userId } = job.data as ReportJobData;
+
+    const maxAttempts = job.opts.attempts || 3;
+    const isFinalAttempt = job.attemptsMade >= maxAttempts;
+
+
+    if (isFinalAttempt) {
+        console.error(`☠️ [JOB FAILED FINAL] Завдання ${job.id} (Звіт ${reportId}) остаточно провалено після ${job.attemptsMade} спроб: ${err.message}`);
+
         await prisma.report.updateMany({
             where: { id: reportId },
             data: {
@@ -137,21 +168,11 @@ const worker = new Worker('report-generation', async (job) => {
                 error: err.message
             })
         });
-
-        throw err;
-    }
-}, { connection: REDIS_CONNECTION });
-
-
-worker.on('failed', (job, err) => {
-    if (job) {
-        console.error(`☠️ Помилка в завданні ${job.id}: ${err.message}`);
     } else {
-        console.error(`☠️ Помилка в завданні (job is undefined): ${err.message}`);
+        console.log(`⏳ [JOB RETRY] Завдання ${job.id} буде повторено через деякий час. Спроба ${job.attemptsMade}/${maxAttempts}`);
     }
 });
 
 worker.on('error', err => {
     console.error(`☠️ Критична помилка воркера (напр. Redis): ${err.message}`);
 });
-

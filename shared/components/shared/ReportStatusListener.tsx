@@ -24,8 +24,13 @@ interface SocketFailedPayload {
     error: string;
 }
 
+interface SocketProgressPayload {
+    reportId: number;
+    progress: number;
+}
+
 export function ReportStatusListener({ userId }: ReportStatusListenerProps) {
-    const { activeReportId, setSuccess, setError } = useReportStore();
+    const { activeReportId, setSuccess, setError, setProgress } = useReportStore();
 
     useEffect(() => {
         if (!activeReportId || !userId) {
@@ -36,6 +41,13 @@ export function ReportStatusListener({ userId }: ReportStatusListenerProps) {
 
         socket.on('connect', () => {
             socket.emit('subscribe', userId);
+        });
+
+        socket.on('report-progress', (data: SocketProgressPayload) => {
+            console.log(`Отримано report-progress: ${data.progress}%`);
+            if (data.reportId === activeReportId) {
+                setProgress(data.progress);
+            }
         });
 
         socket.on('report-complete', (data: SocketCompletePayload) => {
@@ -56,7 +68,7 @@ export function ReportStatusListener({ userId }: ReportStatusListenerProps) {
             socket.disconnect();
         };
 
-    }, [activeReportId, userId, setSuccess, setError]);
+    }, [activeReportId, userId, setSuccess, setError, setProgress]);
 
     return null;
 }

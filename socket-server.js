@@ -62,6 +62,18 @@ app.post('/job-failed', (req, res) => {
     res.status(200).send({ message: 'Failure notification sent' });
 });
 
+app.post('/job-progress', (req, res) => {
+    const { userId, reportId, progress } = req.body;
+    if (!userId || !reportId || progress === undefined) {
+        return res.status(400).send('Missing parameters');
+    }
+
+    const roomName = `user-${userId}`;
+
+    io.to(roomName).emit('report-progress', { reportId, progress });
+    res.status(200).send({ message: 'Progress updated' });
+});
+
 
 server.listen(PORT, () => {
     console.log(`Socket.IO та HTTP сервер запущено на http://127.0.0.1:${PORT}`);

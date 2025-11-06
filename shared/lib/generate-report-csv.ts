@@ -91,16 +91,14 @@ export async function generateReportCsv(
 
         await csvWriter.writeRecords(records);
 
-        console.log(`[CSV] Файл успішно створено: ${filePath}`);
-
         return publicUrl;
 
     } catch (error: unknown) {
         let errorMessage = `CSV Generation Failed for report ${reportId}`;
         if (error instanceof Error) {
-            errorMessage += `: ${error.message}`;
+            // errorMessage += `: ${error.message}`;
+            errorMessage += ``;
         }
-        console.error(`[CSV] Помилка генерації CSV:`, error);
         throw new Error(errorMessage);
     }
 }
