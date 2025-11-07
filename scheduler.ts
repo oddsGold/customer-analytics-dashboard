@@ -14,15 +14,12 @@ const cleanupQueue = new Queue('cleanup-jobs', {
 
 async function scheduleCleanup() {
     try {
-        // Використовуємо Repeat для роботи з повторюваними завданнями
         const repeat = new Repeat('cleanup-scheduler', {
             connection: REDIS_CONNECTION
         });
 
-        // Отримуємо всі повторювані завдання
         const jobs = await repeat.getRepeatableJobs(0, -1, true);
 
-        // Видаляємо всі існуючі повторювані завдання для цієї черги
         for (const job of jobs) {
             if (job.name === 'delete-old-reports') {
                 await repeat.removeRepeatableByKey(job.key);
@@ -31,7 +28,6 @@ async function scheduleCleanup() {
 
         await repeat.close();
 
-        // Додаємо нове повторюване завдання
         await cleanupQueue.add(
             'delete-old-reports',
             {},

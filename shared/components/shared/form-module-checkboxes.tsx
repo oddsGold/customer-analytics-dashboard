@@ -10,63 +10,77 @@ import {
     Checkbox,
 } from "@/shared/components/ui";
 import { Control } from "react-hook-form";
+import {CategoryWithModules} from "@/shared/constants";
 
 
-const modules = [
-    { id: "1", label: "каса Cashalot (ID 1)" },
-    { id: "2", label: "FSAPI (ID 2)" },
-    { id: "3", label: "COM/ApiBridge (ID 3)" },
-    { id: "4", label: "драйвер BAS (ID 4)" },
-    { id: "5", label: "каса + драйвер COM/ApiBridge (ID 5)" },
-    { id: "6", label: "каса + драйвер BAS (ID 6)" },
-    { id: "101", label: "Cклад (ID 101)" },
-];
+interface FormModuleCheckboxesProps {
+    control: Control<any>;
+    categories: CategoryWithModules[];
+}
+export function FormModuleCheckboxes({
+                                               control,
+                                               categories
+                                           }: FormModuleCheckboxesProps) {
 
-export function FormModuleCheckboxes({ control }: { control: Control<any> }) {
     return (
         <FormField
             control={control}
             name="modules"
             render={({ field }) => (
                 <FormItem>
-                    <div className="mt-6">
-                        <FormLabel className="text-base">Перелік модулів</FormLabel>
+                    <div className="mt-6 mb-4">
+                        <FormLabel className="text-2xl">Перелік модулів:</FormLabel>
                     </div>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
 
-                        {modules.map((module) => {
-                            const currentValue: string[] = field.value || [];
-                            const isChecked = currentValue.includes(module.id);
+                    <div className="space-y-4">
+                        {categories.map((category) => (
+                            <div key={category.id}>
+                                <h3 className="mb-2 font-medium text-gray-800 underline">
+                                    {category.name}
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                                    {category.modules.map((module) => {
+                                        const currentValue: string[] = field.value || [];
 
-                            const handleCheckedChange = (checkedState: boolean | 'indeterminate') => {
-                                const isNowChecked = !!checkedState;
-                                return isNowChecked
-                                    ? field.onChange([...currentValue, module.id])
-                                    : field.onChange(
-                                        currentValue.filter(
-                                            (value) => value !== module.id
-                                        )
-                                    );
-                            };
+                                        const moduleValue = String(module.moduleId);
 
-                            return (
-                                <FormItem key={module.id} className="space-y-0">
-                                    <FormLabel
-                                        className="flex flex-row items-center space-x-3 rounded-[5px] cursor-pointer border border-primary p-3 bg-white/50 shadow-sm hover:bg-secondary"
-                                    >
-                                        <FormControl>
-                                            <Checkbox
-                                                checked={isChecked}
-                                                onCheckedChange={handleCheckedChange}
-                                            />
-                                        </FormControl>
-                                        <span className="font-normal text-sm cursor-pointer">
-                                            {module.label}
-                                        </span>
-                                    </FormLabel>
-                                </FormItem>
-                            );
-                        })}
+                                        const isChecked = currentValue.includes(moduleValue);
+
+                                        const handleCheckedChange = (checkedState: boolean | 'indeterminate') => {
+                                            const isNowChecked = !!checkedState;
+                                            return isNowChecked
+                                                ? field.onChange([...currentValue, moduleValue])
+                                                : field.onChange(
+                                                    currentValue.filter(
+                                                        (value) => value !== moduleValue
+                                                    )
+                                                );
+                                        };
+
+                                        return (
+                                            <FormItem
+                                                key={module.id}
+                                                className="space-y-0"
+                                            >
+                                                <FormLabel
+                                                    className="flex flex-row items-center space-x-3 rounded-[5px] cursor-pointer border border-primary p-3 bg-white/50 shadow-sm hover:bg-secondary"
+                                                >
+                                                    <FormControl>
+                                                        <Checkbox
+                                                            checked={isChecked}
+                                                            onCheckedChange={handleCheckedChange}
+                                                        />
+                                                    </FormControl>
+                                                    <span className="font-normal text-sm cursor-pointer">
+                                                        {module.name}
+                                                    </span>
+                                                </FormLabel>
+                                            </FormItem>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                     <FormMessage />
                 </FormItem>

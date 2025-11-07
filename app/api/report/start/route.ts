@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import {getUserSession} from "@/shared/lib/get-user-session";
 import {prisma} from "@/prisma/prisma-client";
 import {env} from "@/shared/lib/env";
+import {RequestBody} from "@/shared/constants";
 
 
 const REDIS_CONNECTION = {
@@ -24,12 +25,6 @@ const reportQueue = new Queue('report-generation', {
     }
 });
 
-interface RequestBody {
-    from: string;
-    to: string | null;
-    modules?: string[];
-}
-
 export async function POST(req: Request) {
     try {
         const session = await getUserSession();
@@ -40,10 +35,19 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { from, to, modules } = body as RequestBody;
+        const {
+            modules,
+            licenseStartDate,
+            licenseEndDate,
+            licenseActivationDate
+        } = body as RequestBody;
 
-        if (!from) {
-            return NextResponse.json({ error: 'Дата "З" є обов\'язковою' }, { status: 400 });
+        const hasStartDate = !!licenseStartDate?.from;
+        const hasEndDate = !!licenseEndDate?.from;
+        const hasActivationDate = !!licenseActivationDate?.from;
+
+        if (!hasStartDate && !hasEndDate && !hasActivationDate) {
+            return NextResponse.json({ error: "Будь ласка, оберіть 'from' хоча б для одного діапазону." }, { status: 400 });
         }
 
 
@@ -57,9 +61,10 @@ export async function POST(req: Request) {
         const job = await reportQueue.add('generate-EDRPOU-report', {
             reportId: report.id,
             userId: userId,
-            dateFrom: from,
-            dateTo: to,
-            modules: modules
+            modules: modules,
+            licenseStartDate: licenseStartDate,
+            licenseEndDate: licenseEndDate,
+            licenseActivationDate: licenseActivationDate
         });
 
         return NextResponse.json({

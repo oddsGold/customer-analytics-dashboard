@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { Category, Module, User } from '@prisma/client';
+import React, { useState } from 'react';
+import { Category, Module } from '@prisma/client';
 import { Button } from '@/shared/components/ui';
 import {
     createCategory,

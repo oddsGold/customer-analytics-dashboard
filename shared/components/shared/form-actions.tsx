@@ -9,7 +9,7 @@ export function FormActions({ status }: { status: ReportState['status'] }) {
 
     if (status === 'pending') {
         return (
-            <div className="flex flex-col space-y-3 p-3 border rounded-md mt-4 bg-muted/50 max-w-sm">
+            <div className="flex flex-col space-y-3 p-3 border rounded-[5px] mt-4 bg-muted/50 max-w-sm">
 
                 <div className="flex items-center space-x-3">
                     <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg"

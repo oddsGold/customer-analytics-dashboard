@@ -5,7 +5,9 @@ import cors from 'cors';
 import { env } from './shared/lib/env';
 
 const PORT = parseInt(env('SOCKET_PORT', '3001'), 10);
-const CLIENT_URL = env('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
+const CLIENT_HOST = env('NEXT_PUBLIC_SITE_URL', 'http://localhost');
+const CLIENT_PORT = parseInt(env('NEXT_PUBLIC_SITE_PORT', '3000'), 10);
+const CLIENT_URL = `${CLIENT_HOST}:${CLIENT_PORT}`;
 
 const app = express();
 app.use(express.json());
@@ -14,15 +16,12 @@ app.use(cors({ origin: CLIENT_URL }));
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        // origin: "*", // Для розробки. В продакшені вкажіть ваш домен
         origin: CLIENT_URL,
         methods: ["GET", "POST"]
     }
 });
 
 io.on('connection', (socket) => {
-
-    // підписуємо користувача на його власну "кімнату"
     socket.on('subscribe', (userId) => {
         const roomName = `user-${userId}`;
         socket.join(roomName);

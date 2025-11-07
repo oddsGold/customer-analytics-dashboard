@@ -13,12 +13,16 @@ export interface ReportSuccessData {
     downloadUrl: string;
 }
 
-export interface ReportJobData {
-    reportId: number;
-    userId: number;
-    dateFrom: string;
-    dateTo: string | null;
+export interface DateRangePayload {
+    from: string;
+    to: string | null;
+}
+
+export interface RequestBody {
     modules?: string[];
+    licenseStartDate?: DateRangePayload | null;
+    licenseEndDate?: DateRangePayload | null;
+    licenseActivationDate?: DateRangePayload | null;
 }
 
 export interface ClientDetail {
@@ -30,4 +34,24 @@ export interface ClientDetail {
     licenseStartDate: Date | null;
     partner: string | null;
     goldPartner: string | null;
+}
+
+export interface Module {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    name: string;
+    authorId: number;
+    isPublished: boolean;
+    moduleId: number;
+    categoryId: number;
+}
+
+export interface CategoryWithModules {
+    id: number;
+    createdAt: Date;
+    updatedAt: Date;
+    name: string;
+    authorId: number;
+    modules: Module[];
 }

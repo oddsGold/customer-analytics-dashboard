@@ -2,7 +2,7 @@ import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
 import { env } from './shared/lib/env';
-import {ClientDetail, ReportJobData} from "@/shared/constants";
+import {ClientDetail, DateRangePayload, RequestBody} from "@/shared/constants";
 import {ExternalAPI} from "@/shared/services/external-api-service";
 
 const prisma = new PrismaClient();
@@ -35,9 +35,25 @@ async function sendProgress(reportId: number, userId: number, progress: number) 
     }
 }
 
+interface JobPayload {
+    reportId: number;
+    userId: number;
+    modules?: string[];
+    licenseStartDate?: DateRangePayload | null;
+    licenseEndDate?: DateRangePayload | null;
+    licenseActivationDate?: DateRangePayload | null;
+}
+
 
 const worker = new Worker('report-generation', async (job) => {
-    const { reportId, userId, dateFrom, dateTo, modules } = job.data as ReportJobData;
+    const {
+        reportId,
+        userId,
+        modules,
+        licenseStartDate,
+        licenseEndDate,
+        licenseActivationDate
+    } = job.data as JobPayload;
 
     if (!reportId || !userId) {
         throw new Error("Missing reportId or userId in job data");
@@ -57,7 +73,12 @@ const worker = new Worker('report-generation', async (job) => {
         });
         await sendProgress(reportId, userId, 10);
 
-        const paramsForApi1 = { dateFrom, dateTo, modules };
+        const paramsForApi1 = {
+            modules,
+            licenseStartDate,
+            licenseEndDate,
+            licenseActivationDate
+        };
         const edrpouList = await ExternalAPI.getEdrpouList(paramsForApi1);
 
         if (edrpouList.length === 0) {
@@ -141,7 +162,7 @@ worker.on('failed', async (job: Job | undefined, err: Error) => {
         return;
     }
 
-    const { reportId, userId } = job.data as ReportJobData;
+    const { reportId, userId } = job.data as JobPayload;
 
     const maxAttempts = job.opts.attempts || 3;
     const isFinalAttempt = job.attemptsMade >= maxAttempts;

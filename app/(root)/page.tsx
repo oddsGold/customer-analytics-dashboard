@@ -4,7 +4,7 @@ import {LoginForm} from "@/shared/components/shared/modals/auth-modal/forms/logi
 import {getUserSession} from "@/shared/lib/get-user-session";
 import { prisma } from '@/prisma/prisma-client';
 import {CustomerReportForm} from "@/shared/components/shared/form/customer-report-form";
-import {ReportStatusListener} from "@/shared/components/shared/ReportStatusListener";
+import {ReportStatusListener} from "@/shared/components/shared/report-status-listener";
 
 
 export default async function Home() {
@@ -16,6 +16,23 @@ export default async function Home() {
             where: { id: Number(session?.id) }
         });
     }
+
+    const categories = await prisma.category.findMany({
+        where: {
+            modules: {
+                some: {
+                    isPublished: true
+                }
+            }
+        },
+        include: {
+            modules: {
+                where: { isPublished: true },
+                orderBy: { moduleId: 'asc' },
+            },
+        },
+        orderBy: { name: 'asc' },
+    });
 
     return (
         <>
@@ -43,7 +60,7 @@ export default async function Home() {
                         <div className="flex gap-[80px]">
                             <div className="flex-1">
                                 <div className="flex flex-col gap-4">
-                                    <CustomerReportForm />
+                                    <CustomerReportForm  categories={categories}/>
                                 </div>
                             </div>
                         </div>

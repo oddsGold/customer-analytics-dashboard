@@ -47,6 +47,8 @@ model Report {
   updatedAt DateTime @updatedAt
 
   completedAt DateTime?
+
+  deletedAt   DateTime?
 }
 
 model ReportItem {

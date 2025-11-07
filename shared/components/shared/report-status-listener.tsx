@@ -44,15 +44,12 @@ export function ReportStatusListener({ userId }: ReportStatusListenerProps) {
         });
 
         socket.on('report-progress', (data: SocketProgressPayload) => {
-            console.log(`Отримано report-progress: ${data.progress}%`);
             if (data.reportId === activeReportId) {
                 setProgress(data.progress);
             }
         });
 
         socket.on('report-complete', (data: SocketCompletePayload) => {
-            console.log('Отримано:', data);
-
             if (data.reportId === activeReportId) {
                 setSuccess(data.data);
             }

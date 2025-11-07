@@ -10,51 +10,94 @@ import { Form } from "@/shared/components/ui";
 import { useReportStore } from "@/shared/store";
 import {FormActions, FormDateRangePicker, FormModuleCheckboxes, FormResult} from "@/shared/components/shared";
 import {API} from "@/shared/services/api-client";
-import {ReportStartResponse} from "@/shared/constants";
+import {CategoryWithModules, ReportStartResponse} from "@/shared/constants";
 
+interface ReportFormWrapperProps {
+    categories: CategoryWithModules[];
+}
+
+const OptionalDateRangeSchema = z.object({
+    from: z.date().optional(),
+    to: z.date().optional()
+}).optional().nullable();
 
 const FormSchema = z.object({
-    dateRange: z.object(
-        {
-            from: z.date({ required_error: "Дата 'З' є обов'язковою." }),
-            to: z.date().optional(),
-        },
-        { required_error: "Будь ласка, оберіть діапазон дат." }
-    ),
+    licenseStartDate: OptionalDateRangeSchema,
+    licenseEndDate: OptionalDateRangeSchema,
+    licenseActivationDate: OptionalDateRangeSchema,
+
     modules: z.array(z.string()).optional(),
 })
+    .refine(data => {
+        const hasStartDate = !!data.licenseStartDate?.from;
+        const hasEndDate = !!data.licenseEndDate?.from;
+        const hasActivationDate = !!data.licenseActivationDate?.from;
+
+        return hasStartDate || hasEndDate || hasActivationDate;
+    }, {
+        message: "Будь ласка, оберіть 'дату з' хоча б для одного діапазону.",
+        path: [],
+    });
 
 type FormValues = z.infer<typeof FormSchema>;
 
-export function CustomerReportForm() {
+export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
     const { status, startReport } = useReportStore()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(FormSchema),
+        mode: 'onChange',
         defaultValues: {
-            dateRange: {
-                from: undefined,
-                to: undefined,
-            },
+            licenseStartDate: undefined,
+            licenseEndDate: undefined,
+            licenseActivationDate: undefined,
             modules: [],
         },
     })
 
+    // @ts-ignore - zodResolver некоректно кладе root-помилку в [""]
+    const rootErrorMessage = form.formState.errors[""]?.message;
+
     async function onSubmit(data: FormValues) {
         try {
-            const params = {
-                from: format(data.dateRange.from, "yyyy-MM-dd"),
-                to: data.dateRange.to ? format(data.dateRange.to, "yyyy-MM-dd") : null,
+            const formatDateRange = (range: { from?: Date; to?: Date } | undefined | null) => {
+                if (!range?.from) {
+                    return null;
+                }
+                return {
+                    from: format(range.from, "yyyy-MM-dd"),
+                    to: range.to ? format(range.to, "yyyy-MM-dd") : null,
+                };
+            };
+
+            const params: any = {
                 modules: data.modules,
             };
+
+            const formattedStartDate = formatDateRange(data.licenseStartDate);
+            if (formattedStartDate) {
+                params.licenseStartDate = formattedStartDate;
+            }
+
+            const formattedEndDate = formatDateRange(data.licenseEndDate);
+            if (formattedEndDate) {
+                params.licenseEndDate = formattedEndDate;
+            }
+
+            const formattedActivationDate = formatDateRange(data.licenseActivationDate);
+            if (formattedActivationDate) {
+                params.licenseActivationDate = formattedActivationDate;
+            }
+
+
             const response: ReportStartResponse = await API.clients.startReport(params);
 
-            toast.success(response.message || `Звіт почав генеруватися.`);
+            toast.success(`Звіт почав генеруватися.`);
             startReport(response.reportId);
             form.reset();
 
         } catch (error: any) {
-            toast.error(error.message || 'Не вдалося запустити звіт.');
+            toast.error('Не вдалося запустити звіт.');
         }
     }
 
@@ -64,9 +107,36 @@ export function CustomerReportForm() {
 
                 <fieldset>
 
-                    <FormDateRangePicker control={form.control} />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2">
+                        <FormDateRangePicker
+                            control={form.control}
+                            name="licenseStartDate"
+                            title="Дата початку дії ліцензії"
+                        />
 
-                    <FormModuleCheckboxes control={form.control} />
+                        <FormDateRangePicker
+                            control={form.control}
+                            name="licenseEndDate"
+                            title="Дата закінчення ліцензії"
+                        />
+
+                        <FormDateRangePicker
+                            control={form.control}
+                            name="licenseActivationDate"
+                            title="Дата активації ліцензії"
+                        />
+
+                        {rootErrorMessage && (
+                            <p className="text-sm font-medium text-destructive">
+                                {rootErrorMessage}
+                            </p>
+                        )}
+                    </div>
+
+                    <FormModuleCheckboxes
+                        control={form.control}
+                        categories={categories}
+                    />
 
                     <FormActions status={status} />
 

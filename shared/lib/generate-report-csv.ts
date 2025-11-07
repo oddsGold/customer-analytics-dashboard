@@ -57,8 +57,8 @@ export async function generateReportCsv(
         const filename = `report-${reportId}-${Date.now()}.csv`;
         const filePath = path.join(reportsDir, filename);
 
-        const relativeUrl = `/reports/${filename}`;
-        const publicUrl = `${siteUrl}${relativeUrl}`;
+        const publicUrl = `/reports/${filename}`;
+        // const publicUrl = `${siteUrl}${relativeUrl}`;
 
         await fs.writeFile(filePath, '\ufeff');
 

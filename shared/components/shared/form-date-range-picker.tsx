@@ -19,16 +19,26 @@ import { Calendar } from "@/shared/components/ui/calendar";
 import { uk } from "date-fns/locale";
 import { Control } from "react-hook-form";
 
-export function FormDateRangePicker({ control }: { control: Control<any> }) {
+interface FormDateRangePickerProps {
+    control: Control<any>;
+    name: string;
+    title: string;
+    className?: string;
+}
+
+export function FormDateRangePicker({ control, name, title = "Діапазон дат (З - По)", className }: FormDateRangePickerProps) {
     const [open, setOpen] = React.useState(false);
 
     return (
         <FormField
             control={control}
-            name="dateRange"
+            name={name}
             render={({ field, fieldState }) => (
-                <FormItem className="flex flex-col max-w-sm">
-                    <FormLabel className="text-base">Діапазон дат (З - По)</FormLabel>
+                <FormItem className={cn(
+                    "flex flex-col max-w-sm",
+                    className
+                )}>
+                    <FormLabel className="text-base">{title}</FormLabel>
                     <FormControl>
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>

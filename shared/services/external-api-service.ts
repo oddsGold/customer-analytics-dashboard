@@ -3,12 +3,12 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 // --- API 1: Отримуємо список EDRPOU ---
 // (Вам потрібно буде замінити 'YOUR_API_1_URL' та додати 'Authorization' хедep)
-import {ClientDetail, ReportJobData} from "@/shared/constants";
+import {ClientDetail, RequestBody} from "@/shared/constants";
 
 const API_1_URL = 'https://api.service1.com/get-edrpou-list';
 
 // (Припускаємо, що API 1 приймає ті ж параметри, що й воркер)
-type Api1Params = Omit<ReportJobData, 'reportId' | 'userId'>;
+type Api1Params = Omit<RequestBody, 'reportId' | 'userId'>;
 
 async function getEdrpouList(params: Api1Params): Promise<string[]> {
     try {
