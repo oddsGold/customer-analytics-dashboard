@@ -11,3 +11,12 @@ export const startReport = async (params: ReportParams): Promise<ReportStartResp
 
     return data;
 };
+
+export const cancelReport = async (reportId: number): Promise<ReportStartResponse> => {
+    const { data } = await instance.post<ReportStartResponse>(
+        ApiRoutes.CANCEL_REPORT,
+        { reportId }
+    )
+
+    return data;
+};

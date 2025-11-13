@@ -123,4 +123,5 @@ enum ReportStatus {
   PROCESSING
   COMPLETED
   FAILED
+  CANCELLED
 }

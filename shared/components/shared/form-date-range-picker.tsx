@@ -24,9 +24,10 @@ interface FormDateRangePickerProps {
     name: string;
     title: string;
     className?: string;
+    trigger?: () => void;
 }
 
-export function FormDateRangePicker({ control, name, title = "Діапазон дат (З - По)", className }: FormDateRangePickerProps) {
+export function FormDateRangePicker({ control, name, title = "Діапазон дат (З - По)", className, trigger }: FormDateRangePickerProps) {
     const [open, setOpen] = React.useState(false);
 
     return (
@@ -35,7 +36,7 @@ export function FormDateRangePicker({ control, name, title = "Діапазон �
             name={name}
             render={({ field, fieldState }) => (
                 <FormItem className={cn(
-                    "flex flex-col max-w-sm",
+                    "flex flex-col",
                     className
                 )}>
                     <FormLabel className="text-base">{title}</FormLabel>
@@ -75,6 +76,7 @@ export function FormDateRangePicker({ control, name, title = "Діапазон �
                                         // if (range?.from && range?.to) {
                                         //     setOpen(false);
                                         // }
+                                        trigger?.();
                                     }}
                                     initialFocus
                                     numberOfMonths={2}

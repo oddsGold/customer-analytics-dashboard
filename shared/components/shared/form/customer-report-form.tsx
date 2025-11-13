@@ -6,11 +6,28 @@ import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
-import { Form } from "@/shared/components/ui";
 import { useReportStore } from "@/shared/store";
 import {FormActions, FormDateRangePicker, FormModuleCheckboxes, FormResult} from "@/shared/components/shared";
 import {API} from "@/shared/services/api-client";
-import {CategoryWithModules, ReportStartResponse} from "@/shared/constants";
+import {CategoryWithModules, ReportStartResponse, RequestBody} from "@/shared/constants";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/shared/components/ui/select";
+import {
+    Form,
+    FormControl,
+    FormDescription,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from "@/shared/components/ui/form";
 
 interface ReportFormWrapperProps {
     categories: CategoryWithModules[];
@@ -25,8 +42,8 @@ const FormSchema = z.object({
     licenseStartDate: OptionalDateRangeSchema,
     licenseEndDate: OptionalDateRangeSchema,
     licenseActivationDate: OptionalDateRangeSchema,
-
     modules: z.array(z.string()).optional(),
+    parameter: z.string().optional().nullable(),
 })
     .refine(data => {
         const hasStartDate = !!data.licenseStartDate?.from;
@@ -42,16 +59,17 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
-    const { status, startReport } = useReportStore()
+    const { status, startReport, activeReportId } = useReportStore()
 
     const form = useForm<FormValues>({
         resolver: zodResolver(FormSchema),
-        mode: 'onChange',
+        mode: 'onSubmit',
         defaultValues: {
             licenseStartDate: undefined,
             licenseEndDate: undefined,
             licenseActivationDate: undefined,
             modules: [],
+            parameter: undefined,
         },
     })
 
@@ -70,25 +88,13 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
                 };
             };
 
-            const params: any = {
+            const params: RequestBody = {
                 modules: data.modules,
+                parameter: data.parameter,
+                licenseStartDate: formatDateRange(data.licenseStartDate),
+                licenseEndDate: formatDateRange(data.licenseEndDate),
+                licenseActivationDate: formatDateRange(data.licenseActivationDate),
             };
-
-            const formattedStartDate = formatDateRange(data.licenseStartDate);
-            if (formattedStartDate) {
-                params.licenseStartDate = formattedStartDate;
-            }
-
-            const formattedEndDate = formatDateRange(data.licenseEndDate);
-            if (formattedEndDate) {
-                params.licenseEndDate = formattedEndDate;
-            }
-
-            const formattedActivationDate = formatDateRange(data.licenseActivationDate);
-            if (formattedActivationDate) {
-                params.licenseActivationDate = formattedActivationDate;
-            }
-
 
             const response: ReportStartResponse = await API.clients.startReport(params);
 
@@ -101,36 +107,87 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
         }
     }
 
+    async function handleCancel() {
+        if (!activeReportId) {
+            toast.error("Не вдалося знайти ID активного звіту. Спробуйте оновити сторінку.");
+            return;
+        }
+        try {
+            await API.clients.cancelReport(activeReportId); // Виклик API
+            toast.success("Запит на скасування надіслано.");
+
+        } catch (error: any) {
+            toast.error(error.message || 'Не вдалося скасувати звіт.');
+        }
+    }
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
                 <fieldset>
+                    <div className="mb-4 text-2xl font-medium">Параметри запиту:</div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-8 gap-y-2">
                         <FormDateRangePicker
                             control={form.control}
                             name="licenseStartDate"
                             title="Дата початку дії ліцензії"
+                            trigger={form.trigger}
                         />
 
                         <FormDateRangePicker
                             control={form.control}
                             name="licenseEndDate"
                             title="Дата закінчення ліцензії"
+                            trigger={form.trigger}
                         />
 
                         <FormDateRangePicker
                             control={form.control}
                             name="licenseActivationDate"
                             title="Дата активації ліцензії"
+                            trigger={form.trigger}
                         />
+                    </div>
 
-                        {rootErrorMessage && (
-                            <p className="text-sm font-medium text-destructive">
-                                {rootErrorMessage}
-                            </p>
-                        )}
+                    {rootErrorMessage && (
+                        <p className="text-sm font-medium text-destructive">
+                            {rootErrorMessage}
+                        </p>
+                    )}
+
+                    <div className="mt-6 mb-4">
+                        <FormField
+                            control={form.control}
+                            name="parameter"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel className="text-2xl font-medium">Додаткові параметри:</FormLabel>
+
+                                    <Select onValueChange={field.onChange}>
+                                        <FormControl className="rounded-[5px] border border-primary shadow-sm hover:bg-secondary">
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Оберіть додатковий параметр..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+
+                                        <SelectContent className="rounded-[5px]">
+                                            <SelectGroup>
+                                                <SelectLabel>Тип звіту</SelectLabel>
+                                                <SelectItem className="rounded-[5px]" value="1">Нова ліцензія</SelectItem>
+                                                <SelectItem className="rounded-[5px]" value="2">Унікальні ЄДРПОУ</SelectItem>
+                                            </SelectGroup>
+                                        </SelectContent>
+                                    </Select>
+
+                                    <FormDescription>
+                                        Ви можете додати один додатковий фільтр до вашого звіту.
+                                    </FormDescription>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </div>
 
                     <FormModuleCheckboxes
@@ -138,7 +195,7 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
                         categories={categories}
                     />
 
-                    <FormActions status={status} />
+                    <FormActions status={status} onCancel={handleCancel} />
 
                 </fieldset>
             </form>

@@ -2,7 +2,7 @@ import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
 import { env } from './shared/lib/env';
-import {ClientDetail, DateRangePayload, RequestBody} from "@/shared/constants";
+import {ClientDetail, DateRangePayload} from "@/shared/constants";
 import {ExternalAPI} from "@/shared/services/external-api-service";
 
 const prisma = new PrismaClient();
@@ -16,6 +16,7 @@ const SOCKET_PORT = parseInt(env('SOCKET_PORT', '3001'), 10);
 const SOCKET_SERVER_URL = `${SOCKET_HOST}:${SOCKET_PORT}`;
 const SITE_URL = env('NEXT_PUBLIC_SITE_URL', 'http://localhost:3000');
 
+const CANCELLATION_ERROR = "JOB_CANCELLED_BY_STATUS";
 
 async function sendProgress(reportId: number, userId: number, progress: number) {
     const finalProgress = Math.min(Math.max(progress, 0), 100);
@@ -39,6 +40,7 @@ interface JobPayload {
     reportId: number;
     userId: number;
     modules?: string[];
+    parameter?: string | null;
     licenseStartDate?: DateRangePayload | null;
     licenseEndDate?: DateRangePayload | null;
     licenseActivationDate?: DateRangePayload | null;
@@ -50,6 +52,7 @@ const worker = new Worker('report-generation', async (job) => {
         reportId,
         userId,
         modules,
+        parameter,
         licenseStartDate,
         licenseEndDate,
         licenseActivationDate
@@ -60,6 +63,15 @@ const worker = new Worker('report-generation', async (job) => {
     }
 
     try {
+        const initialReport = await prisma.report.findUnique({
+            where: { id: reportId },
+            select: { status: true }
+        });
+
+        if (initialReport?.status === 'CANCELLED') {
+            throw new Error(CANCELLATION_ERROR);
+        }
+
         await prisma.report.update({
             where: { id: reportId },
             data: { status: 'PROCESSING' }
@@ -75,6 +87,7 @@ const worker = new Worker('report-generation', async (job) => {
 
         const paramsForApi1 = {
             modules,
+            parameter,
             licenseStartDate,
             licenseEndDate,
             licenseActivationDate
@@ -94,8 +107,17 @@ const worker = new Worker('report-generation', async (job) => {
 
         if (totalItems > 0) {
             for (let index = 0; index < totalItems; index++) {
-                const edrpou = edrpouList[index];
 
+                const currentReport = await prisma.report.findUnique({
+                    where: { id: reportId },
+                    select: { status: true }
+                });
+
+                if (currentReport?.status === 'CANCELLED') {
+                    throw new Error(CANCELLATION_ERROR);
+                }
+
+                const edrpou = edrpouList[index];
                 const item: ClientDetail | null = await ExternalAPI.getClientDetail(edrpou);
 
                 if (item) {
@@ -114,6 +136,8 @@ const worker = new Worker('report-generation', async (job) => {
                 const progress = progressStart + Math.round(((index + 1) / totalItems) * progressRange);
 
                 await sendProgress(reportId, userId, progress);
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
@@ -122,6 +146,15 @@ const worker = new Worker('report-generation', async (job) => {
 
         if (!downloadUrl && count > 0) {
             throw new Error(`CSV не створено, generateReportCsv повернула null (але дані були). Звіт ${reportId}.`);
+        }
+
+        const finalReportCheck = await prisma.report.findUnique({
+            where: { id: reportId },
+            select: { status: true }
+        });
+
+        if (finalReportCheck?.status === 'CANCELLED') {
+            throw new Error(CANCELLATION_ERROR);
         }
 
         await prisma.report.update({
@@ -163,6 +196,25 @@ worker.on('failed', async (job: Job | undefined, err: Error) => {
     }
 
     const { reportId, userId } = job.data as JobPayload;
+
+    if (err.message === CANCELLATION_ERROR) {
+        console.log(`[Worker] Завдання ${reportId} успішно скасовано (статус CANCELLED).`);
+
+        try {
+            await prisma.reportItem.deleteMany({
+                where: {
+                    reportId: reportId
+                }
+            });
+            console.log(`[Worker] Проміжні дані для звіту ${reportId} видалено.`);
+        } catch (cleanupError: any) {
+            console.error(`[Worker Cleanup Error] Помилка при видаленні даних для звіту ${reportId}: ${cleanupError.message}`);
+        }
+
+        await job.remove();
+
+        return;
+    }
 
     const maxAttempts = job.opts.attempts || 3;
     const isFinalAttempt = job.attemptsMade >= maxAttempts;

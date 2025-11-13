@@ -39,7 +39,8 @@ export async function POST(req: Request) {
             modules,
             licenseStartDate,
             licenseEndDate,
-            licenseActivationDate
+            licenseActivationDate,
+            parameter
         } = body as RequestBody;
 
         const hasStartDate = !!licenseStartDate?.from;
@@ -62,9 +63,12 @@ export async function POST(req: Request) {
             reportId: report.id,
             userId: userId,
             modules: modules,
+            parameter: parameter,
             licenseStartDate: licenseStartDate,
             licenseEndDate: licenseEndDate,
             licenseActivationDate: licenseActivationDate
+        }, {
+            jobId: `report-${report.id}`
         });
 
         return NextResponse.json({

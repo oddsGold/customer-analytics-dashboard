@@ -3,9 +3,13 @@
 import * as React from "react";
 import {Button, Progress} from "@/shared/components/ui";
 import { useReportStore, ReportState } from "@/shared/store";
+import { X } from "lucide-react";
 
-export function FormActions({ status }: { status: ReportState['status'] }) {
-    const progress = useReportStore((state) => state.progress);
+interface FormActionsProps {
+    status: ReportState['status'];
+    onCancel: () => void;
+}
+export function FormActions({ status, onCancel }: FormActionsProps) {    const progress = useReportStore((state) => state.progress);
 
     if (status === 'pending') {
         return (
@@ -23,6 +27,17 @@ export function FormActions({ status }: { status: ReportState['status'] }) {
                         <h3 className="text-sm font-semibold">Звіт генерується... ({progress}%)</h3>
                     </div>
                 </div>
+
+                <Button
+                    type="button"
+                    variant="destructive"
+                    size="sm"
+                    onClick={onCancel}
+                    className="flex items-center space-x-1 rounded-[5px]"
+                >
+                    <X className="h-4 w-4" />
+                    <span>Скасувати</span>
+                </Button>
 
                 <Progress value={progress} className="h-2 rounded-[5px]" />
 

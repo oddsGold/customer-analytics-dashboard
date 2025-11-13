@@ -1,7 +1,9 @@
 export interface ReportParams {
-    from: string;
-    to: string | null;
+    licenseStartDate?: DateRangePayload | null;
+    licenseEndDate?: DateRangePayload | null;
+    licenseActivationDate?: DateRangePayload | null;
     modules?: string[];
+    parameter?: string | null;
 }
 
 export interface ReportStartResponse {
@@ -20,6 +22,7 @@ export interface DateRangePayload {
 
 export interface RequestBody {
     modules?: string[];
+    parameter?: string | null;
     licenseStartDate?: DateRangePayload | null;
     licenseEndDate?: DateRangePayload | null;
     licenseActivationDate?: DateRangePayload | null;
