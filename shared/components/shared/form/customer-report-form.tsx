@@ -28,6 +28,7 @@ import {
     FormLabel,
     FormMessage,
 } from "@/shared/components/ui/form";
+import {useSession,signOut} from "next-auth/react";
 
 interface ReportFormWrapperProps {
     categories: CategoryWithModules[];
@@ -59,7 +60,8 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 
 export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
-    const { status, startReport, activeReportId } = useReportStore()
+    const { status, startReport, activeReportId } = useReportStore();
+    const { data: session } = useSession();
 
     const form = useForm<FormValues>({
         resolver: zodResolver(FormSchema),
@@ -77,6 +79,18 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
     const rootErrorMessage = form.formState.errors[""]?.message;
 
     async function onSubmit(data: FormValues) {
+        if (!session) {
+            await signOut({
+                callbackUrl: '/',
+            });
+            return;
+        }
+
+        if (new Date(session.expires) < new Date()) {
+            signOut();
+            return;
+        }
+
         try {
             const formatDateRange = (range: { from?: Date; to?: Date } | undefined | null) => {
                 if (!range?.from) {
