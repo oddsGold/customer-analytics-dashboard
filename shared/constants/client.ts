@@ -16,27 +16,47 @@ export interface ReportSuccessData {
 }
 
 export interface DateRangePayload {
-    from: string;
+    from: string | null;
     to: string | null;
 }
 
 export interface RequestBody {
     modules?: string[];
-    parameter?: string | null;
-    licenseStartDate?: DateRangePayload | null;
-    licenseEndDate?: DateRangePayload | null;
-    licenseActivationDate?: DateRangePayload | null;
+    options?: {
+        unique: boolean,
+        new: boolean
+    }
+    dates: {
+        start: DateRangePayload;
+        end: DateRangePayload;
+        activation: DateRangePayload;
+    };
 }
 
 export interface ClientDetail {
-    edrpou: string;
-    accountName: string | null;
+    full_name: string | null;
     email: string | null;
     phone: string | null;
-    sgCount: number | null;
-    licenseStartDate: Date | null;
-    partner: string | null;
-    goldPartner: string | null;
+    attached_entity_count: number | null;
+
+    // licenseStartDate: Date | null;
+    // partner: string | null;
+    // goldPartner: string | null;
+}
+
+export interface Account {
+    full_name: string;
+    email: string;
+    phone: string;
+    attached_entity_count: number;
+    role: string;
+    type: 'cashalot' | 'sota_kasa';
+    edr_status: string | null;
+}
+
+export interface AccountsApiResponse {
+    status: string;
+    data: Account[];
 }
 
 export interface Module {

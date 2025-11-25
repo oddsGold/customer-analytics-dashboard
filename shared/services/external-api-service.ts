@@ -1,137 +1,66 @@
+import {Account, AccountsApiResponse, ClientDetail, RequestBody} from "@/shared/constants";
+import {env} from "@/shared/lib/env";
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const API_1_URL = env('API_1_URL', 'https://api.medoc.ua/statistics/prro.php');
+const API_2_URL = env('API_2_URL', 'https://api.medoc.ua/prro/info/accounts');
+const AUTH_TOKEN = env('AUTH_TOKEN');
 
-// --- API 1: Отримуємо список EDRPOU ---
-// (Вам потрібно буде замінити 'YOUR_API_1_URL' та додати 'Authorization' хедep)
-import {ClientDetail, RequestBody} from "@/shared/constants";
-
-const API_1_URL = 'https://api.service1.com/get-edrpou-list';
-
-// (Припускаємо, що API 1 приймає ті ж параметри, що й воркер)
 type Api1Params = Omit<RequestBody, 'reportId' | 'userId'>;
 
-async function getEdrpouList(params: Api1Params): Promise<string[]> {
+interface PrroApiResponseItem {
+    edrpou: string;
+    cre_date: string;
+    end_date: string;
+    dealer_name: string;
+    distributor_name: string;
+}
+
+interface PrroApiResponse {
+    status: string;
+    data: PrroApiResponseItem[];
+}
+
+async function getEdrpouList(params: Api1Params): Promise<PrroApiResponseItem[]> {
+    if (!AUTH_TOKEN) {
+        throw new Error('AUTH_TOKEN is missing in environment variables.');
+    }
+
     try {
-        // const response = await fetch(API_1_URL, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         // 'Authorization': `Bearer ${env('API_1_KEY')}`
-        //     },
-        //     body: JSON.stringify(params)
-        // });
-        //
-        // if (!response.ok) {
-        //     throw new Error(`API 1 (EDRPOU) error: ${response.statusText}`);
-        // }
-        //
-        // const data = await response.json();
-        // // Припускаємо, що він повертає { edrpou_list: ['111', '222'] }
-        // return data.edrpou_list || [];
+        const requestBody = {
+            dates: params.dates,
+            modules: params.modules || [],
+            options: params.options
+        };
 
-        return [
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344",
-            "12345678",
-            "87654321",
-            "87654321",
-            "11223344",
-            "11223344"
-        ];
+        const headers = {
+            'Content-Type': 'application/json',
+            'Auth': AUTH_TOKEN || '',
+            // 'User-Agent': 'Node.js/BullMQ Worker'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        };
 
+        const response = await fetch(API_1_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(requestBody)
+        });
+
+
+        if (!response.ok) {
+            throw new Error(`API Medoc error: ${response.status} ${response.statusText}`);
+        }
+
+        const responseData: PrroApiResponse = await response.json();
+
+        if (responseData.status !== 'ok') {
+            throw new Error(`API Medoc returned status: ${responseData.status}`);
+        }
+
+        if (!responseData.data || !Array.isArray(responseData.data)) {
+            return [];
+        }
+
+        return responseData.data;
     } catch (error) {
         console.error("Помилка в getEdrpouList:", error);
         throw error;
@@ -139,140 +68,45 @@ async function getEdrpouList(params: Api1Params): Promise<string[]> {
 }
 
 
-// --- API 2: Отримуємо деталі по EDRPOU ---
-// (Вам потрібно буде замінити 'YOUR_API_2_URL')
-const API_2_URL = 'https://api.service2.com/get-client-details';
+async function getClientDetail(edrpou: string): Promise<Account | null> {
 
-async function getClientDetail(edrpou: string): Promise<ClientDetail | null> {
+    if (!AUTH_TOKEN) {
+        throw new Error('AUTH_TOKEN is missing in environment variables.');
+    }
+
     try {
-        // const response = await fetch(API_2_URL, {
-        //     method: 'POST',
-        //     headers: {
-        //         'Content-Type': 'application/json',
-        //         // 'Authorization': `Bearer ${env('API_2_KEY')}`
-        //     },
-        //     body: JSON.stringify({ edrpou_codes: edrpouList }) // Припускаємо, API 2 приймає такий формат
-        // });
-        //
-        // if (!response.ok) {
-        //     throw new Error(`API 2 (Details) error: ${response.statusText}`);
-        // }
-        //
-        // const data = await response.json();
-        // // Припускаємо, що він повертає { results: [...] }
-        // return data.results || [];
+        const headers = {
+            'Content-Type': 'application/json',
+            'Auth': AUTH_TOKEN || '',
+            // 'User-Agent': 'Node.js/BullMQ Worker'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        };
 
-        // Імітуємо затримку 10мс на кожен запит
-        // await delay(1000);
+        const res = await fetch(API_2_URL, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({ edrpou: edrpou })
+        });
 
-        // Знаходимо тестовий об'єкт за EDRPOU
-        const mockData = [
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "12345678", accountName: "ТОВ 'Ромашка'", email: "info@romashka.ua", phone: "+380441234567", sgCount: 10, licenseStartDate: new Date("2023-01-15T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "87654321", accountName: "ФОП Іваненко", email: "ivanenko@gmail.com", phone: "+380509876543", sgCount: 2, licenseStartDate: new Date("2024-02-20T00:00:00.000Z"), partner: "Partner B", goldPartner: "No" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-            { edrpou: "11223344", accountName: "ПАТ 'Мрія!'", email: "contact@mriya.com", phone: null, sgCount: 150, licenseStartDate: new Date("2022-11-30T00:00:00.000Z"), partner: "Partner A", goldPartner: "Yes" },
-        ];
-        return mockData.find(item => item.edrpou === edrpou) || null;
+        if (!res.ok) {
+            console.warn(`[API 2 Warning] Failed for EDRPOU ${edrpou}: ${res.status} ${res.statusText}`);
+            return null;
+        }
 
-    } catch (error) {
-        console.error("Помилка в getClientDetails:", error);
-        throw error;
+        const responseData: AccountsApiResponse = await res.json();
+
+        if (responseData.status !== 'ok') {
+            console.warn(`[API 2 Warning] Status not OK for ${edrpou}: ${responseData.status}`);
+            return null;
+        }
+
+        if (!responseData.data || !Array.isArray(responseData.data) || responseData.data.length === 0) {
+            return null;
+        }
+
+        return responseData.data[0];
+    } catch (error: any) {
+        throw new Error(`[API 2 Error] Exception for EDRPOU ${edrpou}: ${error.message}`);
     }
 }
 

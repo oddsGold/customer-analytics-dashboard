@@ -82,8 +82,8 @@ export async function generateReportCsv(
 
         const records: CsvRecord[] = items.map((item) => ({
             ...item,
+            edrpou: `="${item.edrpou}"`,
             phone: item.phone ? `="${item.phone}"` : '',
-            // Перетворюємо дату в читанний формат, або залишаємо порожнім
             licenseStartDate: item.licenseStartDate
                 ? item.licenseStartDate.toISOString().split('T')[0]
                 : ''

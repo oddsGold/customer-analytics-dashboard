@@ -48,6 +48,6 @@ export function FormActions({ status, onCancel }: FormActionsProps) {    const p
         );
     }
     return (
-        <Button type="submit" className="rounded-[5px] mt-4">Сформувати .csv</Button>
+        <Button type="submit" className="rounded-[5px] mt-4">Сформувати .xlsx</Button>
     );
 }

@@ -11,6 +11,7 @@ import {
 } from "@/shared/components/ui";
 import { Control } from "react-hook-form";
 import {CategoryWithModules} from "@/shared/constants";
+import {cn} from "@/shared/lib/utils";
 
 
 interface FormModuleCheckboxesProps {
@@ -63,7 +64,12 @@ export function FormModuleCheckboxes({
                                                 className="space-y-0"
                                             >
                                                 <FormLabel
-                                                    className="flex flex-row items-center space-x-3 rounded-[5px] cursor-pointer border border-primary p-3 bg-white/50 shadow-sm hover:bg-secondary"
+                                                    className={cn(
+                                                        "flex flex-row items-center space-x-3 rounded-[5px] border p-3 shadow-sm cursor-pointer transition-all duration-200",
+                                                        isChecked
+                                                            ? "border-primary bg-primary/10"
+                                                            : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                                                    )}
                                                 >
                                                     <FormControl>
                                                         <Checkbox

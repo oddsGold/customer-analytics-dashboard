@@ -2,8 +2,9 @@ import { Worker, Job } from 'bullmq';
 import { PrismaClient } from '@prisma/client';
 import { generateReportCsv } from "./shared/lib/generate-report-csv";
 import { env } from './shared/lib/env';
-import {ClientDetail, DateRangePayload} from "@/shared/constants";
+import {Account, ClientDetail, DateRangePayload} from "@/shared/constants";
 import {ExternalAPI} from "@/shared/services/external-api-service";
+import {generateReportXlsx} from "@/shared/lib/generate-report-xlsx";
 
 const prisma = new PrismaClient();
 
@@ -40,7 +41,7 @@ interface JobPayload {
     reportId: number;
     userId: number;
     modules?: string[];
-    parameter?: string | null;
+    options?: { unique: boolean; new: boolean };
     licenseStartDate?: DateRangePayload | null;
     licenseEndDate?: DateRangePayload | null;
     licenseActivationDate?: DateRangePayload | null;
@@ -52,7 +53,7 @@ const worker = new Worker('report-generation', async (job) => {
         reportId,
         userId,
         modules,
-        parameter,
+        options,
         licenseStartDate,
         licenseEndDate,
         licenseActivationDate
@@ -87,11 +88,14 @@ const worker = new Worker('report-generation', async (job) => {
 
         const paramsForApi1 = {
             modules,
-            parameter,
-            licenseStartDate,
-            licenseEndDate,
-            licenseActivationDate
+            options: options || { unique: false, new: false },
+            dates: {
+                start: licenseStartDate ?? { from: null, to: null },
+                end: licenseEndDate ?? { from: null, to: null },
+                activation: licenseActivationDate ?? { from: null, to: null }
+            }
         };
+
         const edrpouList = await ExternalAPI.getEdrpouList(paramsForApi1);
 
         if (edrpouList.length === 0) {
@@ -117,31 +121,35 @@ const worker = new Worker('report-generation', async (job) => {
                     throw new Error(CANCELLATION_ERROR);
                 }
 
-                const edrpou = edrpouList[index];
-                const item: ClientDetail | null = await ExternalAPI.getClientDetail(edrpou);
+                const clientItem = edrpouList[index];
+                const edrpou = clientItem.edrpou;
 
-                if (item) {
-                    await prisma.reportItem.create({
-                        data: {
-                            ...item,
-                            licenseStartDate: item.licenseStartDate ? new Date(item.licenseStartDate) : null,
-                            reportId: reportId
-                        }
-                    });
-                    count++;
-                } else {
-                    console.log(`[JOB DATA] Пропущено EDRPOU ${edrpou} (немає даних).`);
-                }
+                const item = await ExternalAPI.getClientDetail(edrpou);
+
+                await prisma.reportItem.create({
+                    data: {
+                        edrpou: edrpou,
+                        accountName: item?.full_name ?? null,
+                        email: item?.email ?? null,
+                        phone: item?.phone ?? null,
+                        sgCount: item?.attached_entity_count ?? null,
+                        partner: clientItem.dealer_name ?? null,
+                        goldPartner: clientItem.distributor_name ?? null,
+                        licenseStartDate: clientItem.cre_date ? new Date(clientItem.cre_date) : null,
+                        reportId: reportId
+                    }
+                });
+
+                count++;
 
                 const progress = progressStart + Math.round(((index + 1) / totalItems) * progressRange);
 
                 await sendProgress(reportId, userId, progress);
-
-                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
 
-        const downloadUrl = await generateReportCsv(prisma, reportId, SITE_URL);
+        // const downloadUrl = await generateReportCsv(prisma, reportId, SITE_URL);
+        const downloadUrl = await generateReportXlsx(prisma, reportId, SITE_URL);
         await sendProgress(reportId, userId, 95);
 
         if (!downloadUrl && count > 0) {

@@ -9,16 +9,7 @@ import toast from "react-hot-toast"
 import { useReportStore } from "@/shared/store";
 import {FormActions, FormDateRangePicker, FormModuleCheckboxes, FormResult} from "@/shared/components/shared";
 import {API} from "@/shared/services/api-client";
-import {CategoryWithModules, ReportStartResponse, RequestBody} from "@/shared/constants";
-import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectLabel,
-    SelectTrigger,
-    SelectValue,
-} from "@/shared/components/ui/select";
+import {CategoryWithModules, DateRangePayload, ReportStartResponse, RequestBody} from "@/shared/constants";
 import {
     Form,
     FormControl,
@@ -26,9 +17,10 @@ import {
     FormField,
     FormItem,
     FormLabel,
-    FormMessage,
 } from "@/shared/components/ui/form";
 import {useSession,signOut} from "next-auth/react";
+import { Checkbox } from "@/shared/components/ui/checkbox";
+import {cn} from "@/shared/lib/utils";
 
 interface ReportFormWrapperProps {
     categories: CategoryWithModules[];
@@ -44,16 +36,21 @@ const FormSchema = z.object({
     licenseEndDate: OptionalDateRangeSchema,
     licenseActivationDate: OptionalDateRangeSchema,
     modules: z.array(z.string()).optional(),
-    parameter: z.string().optional().nullable(),
+    isUnique: z.boolean().default(false),
+    isNew: z.boolean().default(false),
 })
     .refine(data => {
-        const hasStartDate = !!data.licenseStartDate?.from;
-        const hasEndDate = !!data.licenseEndDate?.from;
-        const hasActivationDate = !!data.licenseActivationDate?.from;
+        const hasAnyDate = (range: { from?: Date; to?: Date } | null | undefined) => {
+            return !!range?.from || !!range?.to;
+        };
+
+        const hasStartDate = hasAnyDate(data.licenseStartDate);
+        const hasEndDate = hasAnyDate(data.licenseEndDate);
+        const hasActivationDate = hasAnyDate(data.licenseActivationDate);
 
         return hasStartDate || hasEndDate || hasActivationDate;
     }, {
-        message: "Будь ласка, оберіть 'дату з' хоча б для одного діапазону.",
+        message: "Будь ласка, оберіть хоча б одну дату в будь-якому діапазоні.",
         path: [],
     });
 
@@ -71,7 +68,8 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
             licenseEndDate: undefined,
             licenseActivationDate: undefined,
             modules: [],
-            parameter: undefined,
+            isUnique: false,
+            isNew: false,
         },
     })
 
@@ -92,22 +90,28 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
         }
 
         try {
-            const formatDateRange = (range: { from?: Date; to?: Date } | undefined | null) => {
-                if (!range?.from) {
-                    return null;
+            const formatDateRange = (range: { from?: Date; to?: Date } | undefined | null): DateRangePayload => {
+                if (!range || (!range.from && !range.to)) {
+                    return { from: null, to: null };
                 }
+
                 return {
-                    from: format(range.from, "yyyy-MM-dd"),
+                    from: range.from ? format(range.from, "yyyy-MM-dd") : null,
                     to: range.to ? format(range.to, "yyyy-MM-dd") : null,
                 };
             };
 
             const params: RequestBody = {
                 modules: data.modules,
-                parameter: data.parameter,
-                licenseStartDate: formatDateRange(data.licenseStartDate),
-                licenseEndDate: formatDateRange(data.licenseEndDate),
-                licenseActivationDate: formatDateRange(data.licenseActivationDate),
+                options: {
+                    unique: data.isUnique,
+                    new: data.isNew
+                },
+                dates: {
+                    start: formatDateRange(data.licenseStartDate),
+                    end: formatDateRange(data.licenseEndDate),
+                    activation: formatDateRange(data.licenseActivationDate),
+                },
             };
 
             const response: ReportStartResponse = await API.clients.startReport(params);
@@ -127,7 +131,7 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
             return;
         }
         try {
-            await API.clients.cancelReport(activeReportId); // Виклик API
+            await API.clients.cancelReport(activeReportId);
             toast.success("Запит на скасування надіслано.");
 
         } catch (error: any) {
@@ -171,37 +175,72 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
                         </p>
                     )}
 
-                    <div className="mt-6 mb-4">
-                        <FormField
-                            control={form.control}
-                            name="parameter"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-2xl font-medium">Додаткові параметри:</FormLabel>
+                    <div className="mt-6 mb-4 space-y-4">
+                        <div className="text-2xl font-medium block mb-4">
+                            Додаткові опції:
+                        </div>
 
-                                    <Select onValueChange={field.onChange}>
-                                        <FormControl className="rounded-[5px] border border-primary shadow-sm hover:bg-secondary">
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Оберіть додатковий параметр..." />
-                                            </SelectTrigger>
+                        <div className="flex flex-row gap-8">
+                            <FormField
+                                control={form.control}
+                                name="isNew"
+                                render={({ field }) => (
+                                    <FormItem
+                                        className={cn(
+                                            "relative flex flex-row items-start space-x-3 space-y-0 rounded-[5px] border p-4 shadow-sm cursor-pointer transition-all duration-200",
+                                            field.value
+                                                ? "border-primary bg-primary/10"
+                                                : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
                                         </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel className="cursor-pointer font-normal after:absolute after:inset-0">
+                                                Нова ліцензія
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Показати лише нових клієнтів
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
 
-                                        <SelectContent className="rounded-[5px]">
-                                            <SelectGroup>
-                                                <SelectLabel>Тип звіту</SelectLabel>
-                                                <SelectItem className="rounded-[5px]" value="1">Нова ліцензія</SelectItem>
-                                                <SelectItem className="rounded-[5px]" value="2">Унікальні ЄДРПОУ</SelectItem>
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-
-                                    <FormDescription>
-                                        Ви можете додати один додатковий фільтр до вашого звіту.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                            <FormField
+                                control={form.control}
+                                name="isUnique"
+                                render={({ field }) => (
+                                    <FormItem
+                                        className={cn(
+                                            "relative flex flex-row items-start space-x-3 space-y-0 rounded-[5px] border p-4 shadow-sm cursor-pointer transition-all duration-200",
+                                            field.value
+                                                ? "border-primary bg-primary/10"
+                                                : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50"
+                                        )}
+                                    >
+                                        <FormControl>
+                                            <Checkbox
+                                                checked={field.value}
+                                                onCheckedChange={field.onChange}
+                                            />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none">
+                                            <FormLabel className="cursor-pointer font-normal after:absolute after:inset-0">
+                                                Унікальні ЄДРПОУ
+                                            </FormLabel>
+                                            <FormDescription>
+                                                Групувати результати за ЄДРПОУ
+                                            </FormDescription>
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
                     </div>
 
                     <FormModuleCheckboxes

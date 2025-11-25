@@ -37,15 +37,13 @@ export async function POST(req: Request) {
         const body = await req.json();
         const {
             modules,
-            licenseStartDate,
-            licenseEndDate,
-            licenseActivationDate,
-            parameter
+            dates,
+            options
         } = body as RequestBody;
 
-        const hasStartDate = !!licenseStartDate?.from;
-        const hasEndDate = !!licenseEndDate?.from;
-        const hasActivationDate = !!licenseActivationDate?.from;
+        const hasStartDate = !!dates?.start?.from || !!dates?.start?.to;
+        const hasEndDate = !!dates?.end?.from || !!dates?.end?.to;
+        const hasActivationDate = !!dates?.activation?.from || !!dates?.activation?.to;
 
         if (!hasStartDate && !hasEndDate && !hasActivationDate) {
             return NextResponse.json({ error: "Будь ласка, оберіть 'from' хоча б для одного діапазону." }, { status: 400 });
@@ -63,10 +61,10 @@ export async function POST(req: Request) {
             reportId: report.id,
             userId: userId,
             modules: modules,
-            parameter: parameter,
-            licenseStartDate: licenseStartDate,
-            licenseEndDate: licenseEndDate,
-            licenseActivationDate: licenseActivationDate
+            options: options,
+            licenseStartDate: dates.start,
+            licenseEndDate: dates.end,
+            licenseActivationDate: dates.activation
         }, {
             jobId: `report-${report.id}`
         });
