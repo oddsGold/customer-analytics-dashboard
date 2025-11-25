@@ -5,8 +5,8 @@ import { Prisma } from '@prisma/client';
 async function up() {
     const adminUser = await prisma.user.create({
         data: {
-            fullName: 'Dmytro Sulym',
-            email: 'ds.intelserv@gmail.com',
+            fullName: 'Andrii Shamanskiy',
+            email: 'andrii.shamanskiy@linkos.ua',
             password: hashSync('12345678', 10),
             verified: new Date(),
             role: 'ADMIN',
@@ -14,8 +14,8 @@ async function up() {
     });
     const user = await prisma.user.create({
         data: {
-            fullName: 'Шаманський Андрій',
-            email: 'ds.intelserv!@gmail.com',
+            fullName: 'Dmytro Sulym',
+            email: 'ds.intelserv@gmail.com',
             password: hashSync('123456789', 10),
             verified: new Date(),
             role: 'ADMIN',

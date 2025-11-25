@@ -15,6 +15,7 @@ app.use(cors({ origin: CLIENT_URL }));
 
 const server = http.createServer(app);
 const io = new Server(server, {
+    path: "/report-events/",
     cors: {
         origin: CLIENT_URL,
         methods: ["GET", "POST"]

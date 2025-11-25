@@ -10,6 +10,8 @@ const SOCKET_HOST = process.env.SOCKET_HOST || 'http://127.0.0.1';
 const SOCKET_PORT = process.env.SOCKET_PORT || '3001';
 const SOCKET_URL = `${SOCKET_HOST}:${SOCKET_PORT}` || 'http://127.0.0.1:3001';
 
+// const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || undefined;
+
 interface ReportStatusListenerProps {
     userId: number;
 }
@@ -37,7 +39,9 @@ export function ReportStatusListener({ userId }: ReportStatusListenerProps) {
             return;
         }
 
-        const socket: Socket = io(SOCKET_URL);
+        const socket: Socket = io(SOCKET_URL, {
+            path: '/report-events/'
+        });
 
         socket.on('connect', () => {
             socket.emit('subscribe', userId);
