@@ -56,8 +56,8 @@ export function FormResult() {
                 </Button>
                 <h3 className="font-semibold text-red-300">Сталася помилка</h3>
                 <p className="text-sm text-red-300">На жаль, не вдалося згенерувати звіт:</p>
-                <pre
-                    className="text-xs my-2 p-2 bg-destructive/20 rounded font-mono">{error || 'Невідома помилка'}</pre>
+                <p
+                    className="text-xs my-2 p-2 bg-destructive/20 rounded font-mono">{error || 'Невідома помилка'}</p>
             </div>
         );
     }

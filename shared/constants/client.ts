@@ -78,3 +78,13 @@ export interface CategoryWithModules {
     authorId: number;
     modules: Module[];
 }
+
+export interface JobPayload {
+    reportId: number;
+    userId: number;
+    modules?: string[];
+    options?: { unique: boolean; new: boolean };
+    licenseStartDate?: DateRangePayload | null;
+    licenseEndDate?: DateRangePayload | null;
+    licenseActivationDate?: DateRangePayload | null;
+}

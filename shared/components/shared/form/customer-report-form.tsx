@@ -118,7 +118,7 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
 
             toast.success(`Звіт почав генеруватися.`);
             startReport(response.reportId);
-            form.reset();
+            // form.reset();
 
         } catch (error: any) {
             toast.error('Не вдалося запустити звіт.');
