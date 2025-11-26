@@ -6,11 +6,11 @@ import { useReportStore } from '@/shared/store';
 import {ReportSuccessData} from "@/shared/constants";
 
 
-const SOCKET_HOST = process.env.SOCKET_HOST || 'http://127.0.0.1';
-const SOCKET_PORT = process.env.SOCKET_PORT || '3001';
-const SOCKET_URL = `${SOCKET_HOST}:${SOCKET_PORT}` || 'http://127.0.0.1:3001';
+// const SOCKET_HOST = process.env.SOCKET_HOST || 'http://127.0.0.1';
+// const SOCKET_PORT = process.env.SOCKET_PORT || '3001';
+// const SOCKET_URL = `${SOCKET_HOST}:${SOCKET_PORT}` || 'http://127.0.0.1:3001';
 
-// const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || undefined;
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || undefined;
 
 interface ReportStatusListenerProps {
     userId: number;

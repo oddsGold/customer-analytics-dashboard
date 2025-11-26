@@ -100,7 +100,7 @@ export const ProfileForm: React.FC<Props> = ({ data }) => {
                                     <FormInput type="password" className="text-left" name="password" label="New password"/>
                                     <FormInput type="password" className="text-left" name="confirmPassword" label="Repeat password"/>
 
-                                    <Button disabled={form.formState.isSubmitting} className="text-base mt-10" type="submit">
+                                    <Button disabled={form.formState.isSubmitting} className="text-base mt-10 rounded-[5px]" type="submit">
                                         Зберегти
                                     </Button>
 
@@ -108,7 +108,7 @@ export const ProfileForm: React.FC<Props> = ({ data }) => {
                                         onClick={onClickSignOut}
                                         variant="secondary"
                                         disabled={form.formState.isSubmitting}
-                                        className="text-base"
+                                        className="text-base rounded-[5px]"
                                         type="button">
                                         Вийти
                                     </Button>

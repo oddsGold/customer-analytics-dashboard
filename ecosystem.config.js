@@ -30,7 +30,7 @@ module.exports = {
             // --- 2. SOCKET.IO СЕРВЕР ---
             name: "socket-server",
             script: "tsx", // Використовуємо 'tsx' як скрипт
-            args: "socket-server.js",
+            args: "socket-server.ts",
             // cwd: "/var/www/nextjs-app",
             cwd: process.cwd(),
             instances: 1,

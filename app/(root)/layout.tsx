@@ -1,7 +1,7 @@
 import type {Metadata} from "next";
 
 export const metadata: Metadata = {
-    title: "Next Pizza | Main page"
+    title: "Customers dashboard"
 };
 
 export default function HomeLayout({
@@ -11,9 +11,6 @@ export default function HomeLayout({
 }>) {
     return (
         <main className='min-h-screen'>
-            {/*<Suspense>*/}
-            {/*    <Header />*/}
-            {/*</Suspense>*/}
             {children}
         </main>
     );

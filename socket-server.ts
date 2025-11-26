@@ -1,6 +1,6 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import http from 'http';
-import { Server } from "socket.io";
+import { Server, Socket } from "socket.io";
 import cors from 'cors';
 import { env } from './shared/lib/env';
 
@@ -22,8 +22,8 @@ const io = new Server(server, {
     }
 });
 
-io.on('connection', (socket) => {
-    socket.on('subscribe', (userId) => {
+io.on('connection', (socket: Socket) => {
+    socket.on('subscribe', (userId: number) => {
         const roomName = `user-${userId}`;
         socket.join(roomName);
         console.log(`[Socket] ${socket.id} підписався на кімнату: ${roomName}`);
@@ -34,7 +34,7 @@ io.on('connection', (socket) => {
     });
 });
 
-app.post('/job-complete', (req, res) => {
+app.post('/job-complete', (req: Request, res: Response) => {
     const { userId, reportId, data } = req.body;
 
     if (!userId) {
@@ -48,7 +48,7 @@ app.post('/job-complete', (req, res) => {
     res.status(200).send({ message: 'Notification sent' });
 });
 
-app.post('/job-failed', (req, res) => {
+app.post('/job-failed', (req: Request, res: Response) => {
     const { userId, reportId, error } = req.body;
 
     if (!userId) {
@@ -62,7 +62,7 @@ app.post('/job-failed', (req, res) => {
     res.status(200).send({ message: 'Failure notification sent' });
 });
 
-app.post('/job-progress', (req, res) => {
+app.post('/job-progress', (req: Request, res: Response) => {
     const { userId, reportId, progress } = req.body;
     if (!userId || !reportId || progress === undefined) {
         return res.status(400).send('Missing parameters');
