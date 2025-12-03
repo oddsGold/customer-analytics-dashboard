@@ -4,26 +4,7 @@ import {getUserSession} from "@/shared/lib/get-user-session";
 import {prisma} from "@/prisma/prisma-client";
 import {env} from "@/shared/lib/env";
 import {RequestBody} from "@/shared/constants";
-
-
-const REDIS_CONNECTION = {
-    host: env('REDIS_HOST', '127.0.0.1'),
-    port: parseInt(env('REDIS_PORT', '6379'), 10)
-};
-
-const reportQueue = new Queue('report-generation', {
-    connection: REDIS_CONNECTION,
-
-    defaultJobOptions: {
-        attempts: parseInt(env('BULLMQ_JOB_ATTEMPTS', '3'), 10) || 3,
-        backoff: {
-            type: 'exponential',
-            delay: 10000,
-        },
-        removeOnComplete: true,
-        removeOnFail: false,
-    }
-});
+import { getReportQueue } from "@/shared/lib/report-queue";
 
 export async function POST(req: Request) {
     try {
@@ -56,6 +37,8 @@ export async function POST(req: Request) {
                 userId: userId
             }
         });
+
+        const reportQueue = getReportQueue();
 
         const job = await reportQueue.add('generate-EDRPOU-report', {
             reportId: report.id,
