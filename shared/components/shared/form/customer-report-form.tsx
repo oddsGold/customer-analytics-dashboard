@@ -248,6 +248,8 @@ export function CustomerReportForm({ categories }: ReportFormWrapperProps) {
                         categories={categories}
                     />
 
+                    <p className="text-xs text-gray-500 pt-1">Якщо не обрано жодного модуля, звіт буде сформовано по всіх доступних модулях.*</p>
+
                     <FormActions status={status} onCancel={handleCancel} />
 
                 </fieldset>

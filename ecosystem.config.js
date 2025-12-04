@@ -17,19 +17,18 @@ module.exports = {
                 NODE_ENV: "production",
                 PORT: 3000,
             },
-            // Замініть '/app/.pm2/logs' на ваш шлях
-            // error_file: "/var/www/vhosts/nextjs-app/logs/next-err.log",
-            // out_file: "/var/www/vhosts/nextjs-app/logs/next-out.log",
-            // log_file: "/var/www/vhosts/nextjs-app/logs/next-combined.log",
-            error_file: '/Users/oddsgold/nextjs-logs/next-err.log',
-            out_file: '/Users/oddsgold/nextjs-logs/next-out.log',
-            log_file: '/Users/oddsgold/nextjs-logs/next-combined.log',
+            error_file: "/var/www/vhosts/nextjs-app/logs/next-err.log",
+            out_file: "/var/www/vhosts/nextjs-app/logs/next-out.log",
+            log_file: "/var/www/vhosts/nextjs-app/logs/next-combined.log",
+            // error_file: '/Users/oddsgold/nextjs-logs/next-err.log',
+            // out_file: '/Users/oddsgold/nextjs-logs/next-out.log',
+            // log_file: '/Users/oddsgold/nextjs-logs/next-combined.log',
             time: true
         },
         {
             // --- 2. SOCKET.IO СЕРВЕР ---
             name: "socket-server",
-            script: "tsx", // Використовуємо 'tsx' як скрипт
+            script: "./node_modules/.bin/tsx", // Використовуємо 'tsx' як скрипт
             args: "socket-server.ts",
             // cwd: "/var/www/nextjs-app",
             cwd: process.cwd(),
@@ -39,18 +38,18 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            // error_file: "/var/www/vhosts/nextjs-app/logs/socket-err.log",
-            // out_file: "/var/www/vhosts/nextjs-app/logs/socket-out.log",
-            // log_file: "/var/www/vhosts/nextjs-app/logs/socket-combined.log",
-            error_file: '/Users/oddsgold/nextjs-logs/socket-err.log',
-            out_file: '/Users/oddsgold/nextjs-logs/socket-out.log',
-            log_file: '/Users/oddsgold/nextjs-logs/socket-combined.log',
+            error_file: "/var/www/vhosts/nextjs-app/logs/socket-err.log",
+            out_file: "/var/www/vhosts/nextjs-app/logs/socket-out.log",
+            log_file: "/var/www/vhosts/nextjs-app/logs/socket-combined.log",
+            // error_file: '/Users/oddsgold/nextjs-logs/socket-err.log',
+            // out_file: '/Users/oddsgold/nextjs-logs/socket-out.log',
+            // log_file: '/Users/oddsgold/nextjs-logs/socket-combined.log',
             time: true
         },
         {
             // --- 3. ВОРКЕР ГЕНЕРАЦІЇ ЗВІТІВ ---
             name: "worker",
-            script: "tsx",
+            script: "./node_modules/.bin/tsx",
             args: "worker.ts",
             // cwd: "/var/www/nextjs-app",
             cwd: process.cwd(),
@@ -60,18 +59,18 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            // error_file: "/var/www/vhosts/nextjs-app/logs/worker-err.log",
-            // out_file: "/var/www/vhosts/nextjs-app/logs/worker-out.log",
-            // log_file: "/var/www/vhosts/nextjs-app/logs/worker-combined.log",
-            error_file: '/Users/oddsgold/nextjs-logs/worker-err.log',
-            out_file: '/Users/oddsgold/nextjs-logs/worker-out.log',
-            log_file: '/Users/oddsgold/nextjs-logs/worker-combined.log',
+            error_file: "/var/www/vhosts/nextjs-app/logs/worker-err.log",
+            out_file: "/var/www/vhosts/nextjs-app/logs/worker-out.log",
+            log_file: "/var/www/vhosts/nextjs-app/logs/worker-combined.log",
+            // error_file: '/Users/oddsgold/nextjs-logs/worker-err.log',
+            // out_file: '/Users/oddsgold/nextjs-logs/worker-out.log',
+            // log_file: '/Users/oddsgold/nextjs-logs/worker-combined.log',
             time: true
         },
         {
             // --- 4. ВОРКЕР ОЧИЩЕННЯ ---
             name: "cleanup-worker",
-            script: "tsx",
+            script: "./node_modules/.bin/tsx",
             args: "cleanup-worker.ts",
             // cwd: "/var/www/nextjs-app",
             cwd: process.cwd(),
@@ -81,12 +80,12 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            // error_file: "/var/www/vhosts/nextjs-app/logs/cleanup-err.log",
-            // out_file: "/var/www/vhosts/nextjs-app/logs/cleanup-out.log",
-            // log_file: "/var/www/vhosts/nextjs-app/logs/cleanup-combined.log",
-            error_file: '/Users/oddsgold/nextjs-logs/cleanup-err.log',
-            out_file: '/Users/oddsgold/nextjs-logs/cleanup-out.log',
-            log_file: '/Users/oddsgold/nextjs-logs/cleanup-combined.log',
+            error_file: "/var/www/vhosts/nextjs-app/logs/cleanup-err.log",
+            out_file: "/var/www/vhosts/nextjs-app/logs/cleanup-out.log",
+            log_file: "/var/www/vhosts/nextjs-app/logs/cleanup-combined.log",
+            // error_file: '/Users/oddsgold/nextjs-logs/cleanup-err.log',
+            // out_file: '/Users/oddsgold/nextjs-logs/cleanup-out.log',
+            // log_file: '/Users/oddsgold/nextjs-logs/cleanup-combined.log',
             time: true
         }
     ],

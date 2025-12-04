@@ -29,14 +29,6 @@ async function up() {
         }
     });
 
-    await prisma.category.create({
-        data: {
-            name: 'Sota.Kassa',
-            authorId: adminUser.id,
-        }
-    });
-
-
     const modulesToCreate: Prisma.ModuleCreateManyInput[] = [
         {
             name: 'каса Cashalot',
