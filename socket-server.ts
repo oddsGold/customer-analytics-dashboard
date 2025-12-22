@@ -5,8 +5,8 @@ import cors from 'cors';
 import { env } from './shared/lib/env';
 
 const PORT = parseInt(env('SOCKET_PORT', '3001'), 10);
-const CLIENT_HOST = env('NEXT_PUBLIC_SITE_URL', 'http://localhost');
-const CLIENT_PORT = parseInt(env('NEXT_PUBLIC_SITE_PORT', '3000'), 10);
+const CLIENT_HOST = env('NEXT_PUBLIC_SITE_URL', 'https://data.cashalot.ua');
+const CLIENT_PORT = parseInt(env('NEXT_PUBLIC_SITE_PORT', '3002'), 10);
 const CLIENT_URL = `${CLIENT_HOST}:${CLIENT_PORT}`;
 
 const app = express();
