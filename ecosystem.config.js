@@ -3,9 +3,9 @@ module.exports = {
     apps: [
         {
             // --- 1. NEXT.JS ДОДАТОК ---
-            name: "nextjs-app",
+            name: "nextjs-data",
             script: "./node_modules/next/dist/bin/next",
-            args: "start -p 3000",
+            args: "start -p 3002",
             // Замініть '/app' на ваш реальний шлях з README
             // cwd: "/var/www/nextjs-app",
             cwd: process.cwd(),
@@ -15,11 +15,11 @@ module.exports = {
             watch: false,
             env: {
                 NODE_ENV: "production",
-                PORT: 3000,
+                PORT: 3002,
             },
-            error_file: "/var/www/vhosts/nextjs-app/logs/next-err.log",
-            out_file: "/var/www/vhosts/nextjs-app/logs/next-out.log",
-            log_file: "/var/www/vhosts/nextjs-app/logs/next-combined.log",
+            error_file: "/var/www/vhosts/data/logs/next-err.log",
+            out_file: "/var/www/vhosts/data/logs/next-out.log",
+            log_file: "/var/www/vhosts/data/logs/next-combined.log",
             // error_file: '/Users/oddsgold/nextjs-logs/next-err.log',
             // out_file: '/Users/oddsgold/nextjs-logs/next-out.log',
             // log_file: '/Users/oddsgold/nextjs-logs/next-combined.log',
@@ -38,9 +38,9 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            error_file: "/var/www/vhosts/nextjs-app/logs/socket-err.log",
-            out_file: "/var/www/vhosts/nextjs-app/logs/socket-out.log",
-            log_file: "/var/www/vhosts/nextjs-app/logs/socket-combined.log",
+            error_file: "/var/www/vhosts/data/logs/socket-err.log",
+            out_file: "/var/www/vhosts/data/logs/socket-out.log",
+            log_file: "/var/www/vhosts/data/logs/socket-combined.log",
             // error_file: '/Users/oddsgold/nextjs-logs/socket-err.log',
             // out_file: '/Users/oddsgold/nextjs-logs/socket-out.log',
             // log_file: '/Users/oddsgold/nextjs-logs/socket-combined.log',
@@ -59,10 +59,10 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            error_file: "/var/www/vhosts/nextjs-app/logs/worker-err.log",
-            out_file: "/var/www/vhosts/nextjs-app/logs/worker-out.log",
-            log_file: "/var/www/vhosts/nextjs-app/logs/worker-combined.log",
-            // error_file: '/Users/oddsgold/nextjs-logs/worker-err.log',
+            error_file: "/var/www/vhosts/data/logs/worker-err.log",
+            out_file: "/var/www/vhosts/data/logs/worker-out.log",
+            log_file: "/var/www/vhosts/data/logs/worker-combined.log",
+            // error_file: '/Users/oddsgold/data/worker-err.log',
             // out_file: '/Users/oddsgold/nextjs-logs/worker-out.log',
             // log_file: '/Users/oddsgold/nextjs-logs/worker-combined.log',
             time: true
@@ -80,9 +80,9 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
             },
-            error_file: "/var/www/vhosts/nextjs-app/logs/cleanup-err.log",
-            out_file: "/var/www/vhosts/nextjs-app/logs/cleanup-out.log",
-            log_file: "/var/www/vhosts/nextjs-app/logs/cleanup-combined.log",
+            error_file: "/var/www/vhosts/data/logs/cleanup-err.log",
+            out_file: "/var/www/vhosts/data/logs/cleanup-out.log",
+            log_file: "/var/www/vhosts/data/logs/cleanup-combined.log",
             // error_file: '/Users/oddsgold/nextjs-logs/cleanup-err.log',
             // out_file: '/Users/oddsgold/nextjs-logs/cleanup-out.log',
             // log_file: '/Users/oddsgold/nextjs-logs/cleanup-combined.log',
