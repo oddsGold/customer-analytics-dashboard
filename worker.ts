@@ -141,7 +141,7 @@ const worker = new Worker<JobPayload>('report-generation', async (job) => {
                         sgCount: itemDetails?.attached_entity_count ?? null,
                         partner: clientItem.dealer_name ?? null,
                         goldPartner: clientItem.distributor_name ?? null,
-                        licenseStartDate: clientItem.cre_date ? new Date(clientItem.cre_date) : null,
+                        licenseStartDate: clientItem.cre_date ? new Date(clientItem.cre_date.slice(0, 10) + 'T00:00:00.000Z') : null,
                     }
                 });
 
